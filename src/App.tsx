@@ -220,7 +220,13 @@ function Overview() {
       <img className="right-rail" src="/assets/right-rail.webp" alt="" aria-hidden="true" />
       <div className="center-canvas">
         <section className="hero-art" aria-label="A more thoughtful tomorrow, composed today">
-          <img src="/assets/hero.webp" alt="A more thoughtful tomorrow, composed today" />
+          <img src="/assets/hero.webp" alt="" aria-hidden="true" />
+          <div className="hero-copy">
+            <h1>A MORE<br />THOUGHTFUL<br />TOMORROW,</h1>
+            <p>COMPOSED TODAY.</p>
+          </div>
+          <div className="hero-manifesto">HUMAN<br />DIRECTION<br />MACHINE<br />EFFORT<br />GREATER<br />POSSIBILITIES<br /><span>—</span></div>
+          <div className="hero-note">SAME<br />QUESTIONS.<br />DEEPER<br />ANSWERS.</div>
         </section>
         <section className="metrics-grid">
           <MetricCard icon="♧" title="Agents Online" value="4 / 6" note="3 active · 1 idle" good />
