@@ -32,7 +32,8 @@ design-reference-v0.4
 - Escala visual adaptativa para diferentes tamanhos de janela usando renderização off-screen e `StretchBlt`.
 - Janela redimensionável com tamanho mínimo para preservar legibilidade.
 - Build local corrigido: removida a dependência antiga de `frame_override.h`.
-- Build Windows automático via GitHub Actions na `main`.
+- Instalador atualizado para reconhecer `bin\Nodus.exe` quando o projeto foi compilado a partir do código-fonte.
+- Build Windows automático via GitHub Actions na `main` e na branch `design-reference-v0.4`.
 
 ## Direção visual aprovada
 
@@ -71,34 +72,41 @@ A versão anterior já apontava para a linguagem visual correta, mas ainda funci
 
 ## Instalação
 
-No Windows 64-bit:
+Existem dois fluxos diferentes:
 
-1. Baixe o ZIP mais recente da `main` ou faça build da branch de desenvolvimento.
-2. Extraia o ZIP inteiro.
-3. Execute `INSTALAR_NODUS.bat` quando o pacote incluir o executável compilado.
-4. O instalador copia a versão para o perfil do usuário.
+### 1. ZIP compilado do GitHub Actions — recomendado
+
+Esse pacote já contém `Nodus.exe` e **não exige compilador**.
+
+1. Abra a execução mais recente do workflow **Build Nodus for Windows**.
+2. Baixe o artifact `Nodus-Windows-v0.4.0`.
+3. Extraia o ZIP inteiro.
+4. Execute `INSTALAR_NODUS.bat`.
+5. O instalador copia o aplicativo para o perfil do usuário e cria os atalhos.
+
+### 2. Código-fonte clonado do GitHub
+
+O repositório não armazena `Nodus.exe` compilado. Se você clonou o projeto, primeiro execute:
+
+```text
+build.bat
+```
+
+Depois do build, o executável estará em:
+
+```text
+bin\Nodus.exe
+```
+
+A partir daí, `INSTALAR_NODUS.bat` também reconhece automaticamente esse executável e consegue instalar a versão compilada localmente.
+
+Se `build.bat` disser que nenhum compilador foi encontrado, use o ZIP do GitHub Actions em vez do código-fonte.
 
 ### Pasta de instalação
 
 ```text
 %LOCALAPPDATA%\Nodus
 ```
-
-### Build manual
-
-Se você já tiver MSVC ou MinGW-w64 configurado:
-
-```text
-build.bat
-```
-
-O executável será gerado em:
-
-```text
-bin\Nodus.exe
-```
-
-O `build.bat` atual não depende mais de `frame_override.h`.
 
 ## Como testar a branch 0.4.0
 
@@ -109,6 +117,12 @@ git fetch origin
 git checkout design-reference-v0.4
 git pull origin design-reference-v0.4
 build.bat
+```
+
+Depois, para instalar a build local:
+
+```text
+INSTALAR_NODUS.bat
 ```
 
 Para voltar à versão estável:
@@ -187,7 +201,10 @@ Depois que o shell visual for aprovado:
 - Tamanho mínimo de janela definido em 1024×640.
 - Abas secundárias atualizadas para compartilhar a nova identidade visual.
 - `build.bat` corrigido para não tentar incluir o arquivo removido `frame_override.h`.
-- README atualizado com fluxo de teste da branch.
+- `installer/install.ps1` agora detecta `bin\Nodus.exe` quando a aplicação foi compilada a partir do source checkout.
+- Mensagem de erro do instalador agora diferencia código-fonte sem build de pacote ZIP incompleto.
+- GitHub Actions agora gera `Nodus-Windows-v0.4.0.zip` também para `design-reference-v0.4`.
+- README atualizado com o fluxo correto de build e instalação.
 
 ### 0.3.0
 
