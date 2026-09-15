@@ -66,7 +66,7 @@ npm run desktop
 
 No Windows, o Vite ignora `src-tauri/target/**` durante o modo desenvolvimento para não tentar observar executáveis temporários bloqueados pelo Cargo.
 
-O projeto também inclui `src-tauri/icons/icon.ico`, necessário pelo `tauri-build` para gerar os recursos nativos do Windows.
+O projeto inclui `src-tauri/icons/icon.ico`, gerado a partir do PNG da marca Nodus com resoluções de 16, 24, 32, 48, 64, 128 e 256 px. O arquivo é necessário para o Tauri gerar os recursos nativos do Windows. `src-tauri/icons/icon.png` guarda a imagem-base usada para o ícone.
 
 ## Build Windows
 
@@ -173,7 +173,7 @@ Depois que a interface estiver visualmente fechada, o Nodus evolui para um verda
 - Pipeline Windows refeito para Tauri.
 - Build sem dependência de download de assets em tempo de compilação.
 - Vite deixa de observar `src-tauri/target/**`, evitando `EBUSY` com executáveis temporários do Cargo no Windows.
-- Adicionado `src-tauri/icons/icon.ico`, exigido pelo `tauri-build` para os recursos do Windows.
+- Corrigido o `src-tauri/icons/icon.ico` inválido que causava `failed to parse icon ... failed to fill whole buffer` no build Windows. O ícone agora contém sete resoluções e tem o PNG da marca como imagem-base.
 - README consolidado para a nova arquitetura.
 
 ### 0.4.x e anteriores
