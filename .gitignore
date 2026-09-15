@@ -8,3 +8,12 @@ bin/
 *.tmp
 .vscode/
 .idea/
+
+# Tauri / web
+node_modules/
+dist/
+.asset-cache/
+public/assets/
+src-tauri/target/
+*.msi
+*.dmg
