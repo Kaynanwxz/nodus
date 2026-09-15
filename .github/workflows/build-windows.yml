@@ -23,7 +23,7 @@ jobs:
         shell: cmd
         run: |
           if not exist bin mkdir bin
-          cl /nologo /O2 /W4 /D_CRT_SECURE_NO_WARNINGS /FIsrc\frame_override.h src\main.c user32.lib gdi32.lib /link /SUBSYSTEM:WINDOWS /OUT:bin\Nodus.exe
+          cl /nologo /O2 /W4 /D_CRT_SECURE_NO_WARNINGS /Isrc /FIframe_override.h src\main.c user32.lib gdi32.lib /link /SUBSYSTEM:WINDOWS /OUT:bin\Nodus.exe
 
       - name: Package
         shell: powershell
