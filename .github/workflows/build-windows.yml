@@ -1,8 +1,8 @@
-name: Build Nodus for Windows
+name: Build Nodus Tauri for Windows
 
 on:
   push:
-    branches: [main, design-reference-v0.4]
+    branches: [main, tauri-v0.5]
   workflow_dispatch:
 
 permissions:
@@ -16,30 +16,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure MSVC
-        uses: ilammy/msvc-dev-cmd@v1
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          arch: x64
+          node-version: 22
 
-      - name: Build Nodus
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install frontend dependencies
         shell: cmd
-        run: |
-          if not exist bin mkdir bin
-          cl /nologo /O2 /W4 /D_CRT_SECURE_NO_WARNINGS src\main.c user32.lib gdi32.lib /link /SUBSYSTEM:WINDOWS /OUT:bin\Nodus.exe
+        run: npm install
+
+      - name: Build Nodus Tauri
+        shell: cmd
+        run: npm run desktop:build
 
       - name: Prepare package
         shell: powershell
         run: |
-          New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Copy-Item bin\Nodus.exe dist\Nodus.exe
-          Copy-Item README.md dist\README.md
-          Copy-Item INSTALAR_NODUS.bat dist\INSTALAR_NODUS.bat
-          Copy-Item installer\install.ps1 dist\install.ps1
-          Compress-Archive -Path dist\* -DestinationPath Nodus-Windows-v0.4.0.zip -Force
+          New-Item -ItemType Directory -Force -Path dist-package | Out-Null
+          Copy-Item src-tauri\target\release\nodus.exe dist-package\Nodus.exe
+          $installer = Get-ChildItem src-tauri\target\release\bundle\nsis\*.exe | Select-Object -First 1
+          if (-not $installer) { throw "NSIS installer not found" }
+          Copy-Item $installer.FullName dist-package\Nodus-Setup-v0.5.0.exe
+          Copy-Item README.md dist-package\README.md
+          Compress-Archive -Path dist-package\* -DestinationPath Nodus-Windows-v0.5.0.zip -Force
 
       - name: Upload Windows package
         uses: actions/upload-artifact@v4
         with:
-          name: Nodus-Windows-v0.4.0
-          path: Nodus-Windows-v0.4.0.zip
+          name: Nodus-Windows-v0.5.0
+          path: Nodus-Windows-v0.5.0.zip
           retention-days: 30
