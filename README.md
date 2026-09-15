@@ -64,6 +64,10 @@ npm install
 npm run desktop
 ```
 
+No Windows, o Vite ignora `src-tauri/target` durante o desenvolvimento. Isso evita erros `EBUSY` causados por executáveis temporários que o Cargo mantém bloqueados enquanto compila.
+
+Se você acabou de atualizar a branch e já tinha `node_modules` de uma versão anterior, rode `npm install` novamente antes de `npm run desktop` para alinhar as dependências locais com o `package.json` atual.
+
 ## Build Windows
 
 Use:
@@ -166,6 +170,7 @@ Depois que a interface estiver visualmente fechada, o Nodus evolui para um verda
 - Abas secundárias preservadas.
 - Pipeline Windows refeito para Tauri.
 - Build sem dependência de download de assets em tempo de compilação.
+- Vite configurado para ignorar `src-tauri/target`, evitando `EBUSY` durante builds do Cargo no Windows.
 - README consolidado para a nova arquitetura.
 
 ### 0.4.x e anteriores
