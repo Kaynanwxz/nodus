@@ -6,25 +6,33 @@ O nome vem do latim *nodus* — **nó, ligação, ponto de conexão** — reflet
 
 ## Estado atual
 
-Versão atual: **0.3.0 — redesign nativo em colagem surrealista dark**.
+Versão em desenvolvimento: **0.4.0 — reference-driven classical collage dashboard**.
 
-A 0.3.0 é uma reconstrução visual real da interface anterior. O layout deixou de ser apenas uma variação do protótipo antigo e agora usa uma composição mais próxima do mockup aprovado, mantendo o aplicativo em C/Win32 e sem adicionar frameworks pesados.
+A 0.4.0 reconstrói a interface principal a partir da referência visual aprovada em 15/09/2026, aproximando estrutura, hierarquia, densidade e composição do mockup escolhido sem abandonar a base nativa em C/Win32.
+
+Esta versão está na branch:
+
+```text
+design-reference-v0.4
+```
 
 ### Já implementado
 
 - Aplicação nativa em **C** usando **Win32 API**.
 - Sem Electron, React, WebView, HTML ou JavaScript.
 - Janela principal sem a barra branca padrão do Windows.
-- Cabeçalho próprio do Nodus, com controles de janela integrados.
-- Navegação horizontal no topo.
+- Cabeçalho próprio do Nodus com navegação integrada.
 - Abas `Overview`, `Agents`, `Terminal`, `Tasks`, `Activity` e `Settings`.
-- Interface redesenhada com estética de **colagem digital surrealista clássica dark**.
-- Recortes de papel, olhos, estátuas, diagramas celestes e composição editorial diretamente renderizados em GDI.
-- Dashboard, agentes, terminal, tarefas, atividade e configurações com layouts próprios.
-- Instalador simplificado que usa o `Nodus.exe` já compilado — o computador do usuário não precisa baixar compilador nem compilar nada.
-- Atalhos na Área de Trabalho e Menu Iniciar.
-- Desinstalador local.
-- Build Windows automático via GitHub Actions.
+- Overview refeito com composição muito mais próxima da referência aprovada.
+- Hero editorial com headline serifada, escultura, olho, diagrama celeste, asa e fragmentos de papel.
+- Métricas em quatro cards: agentes online, tarefas, ações e saúde do sistema.
+- Cards compactos de agentes em linha.
+- Lista de tarefas densa, no estilo da referência.
+- Activity feed vertical integrado ao dashboard.
+- Escala visual adaptativa para diferentes tamanhos de janela usando renderização off-screen e `StretchBlt`.
+- Janela redimensionável com tamanho mínimo para preservar legibilidade.
+- Build local corrigido: removida a dependência antiga de `frame_override.h`.
+- Build Windows automático via GitHub Actions na `main`.
 
 ## Direção visual aprovada
 
@@ -43,17 +51,32 @@ A referência aprovada combina:
 - cabeçalho superior desenhado pelo próprio Nodus;
 - **sem barra branca de título do Windows**.
 
+## O que mudou na 0.4.0
+
+A versão anterior já apontava para a linguagem visual correta, mas ainda funcionava como um dashboard escuro genérico com alguns elementos de colagem. A 0.4.0 muda a composição inteira para seguir a referência aprovada:
+
+- branding `NODUS` mais editorial;
+- tagline `IDEAS. AGENTS. ACTIONS. TOGETHER.`;
+- navegação central compacta;
+- busca visual no header;
+- relógio e medallion/profile no canto direito;
+- grande hero antes dos dados;
+- headline `A MORE THOUGHTFUL TOMORROW, COMPOSED TODAY.`;
+- colagem decorativa concentrada nas bordas;
+- área de dados mais limpa no centro;
+- métricas compactas em uma única linha;
+- quatro agent cards lado a lado;
+- tasks e activity divididos como no mockup;
+- melhor comportamento quando a janela é redimensionada.
+
 ## Instalação
 
 No Windows 64-bit:
 
-1. Baixe o ZIP mais recente.
+1. Baixe o ZIP mais recente da `main` ou faça build da branch de desenvolvimento.
 2. Extraia o ZIP inteiro.
-3. Execute `INSTALAR_NODUS.bat`.
-4. O instalador copia a versão já compilada para o perfil do usuário.
-5. O Nodus abre automaticamente e cria atalhos.
-
-Não é necessário instalar Visual Studio, MinGW ou qualquer compilador.
+3. Execute `INSTALAR_NODUS.bat` quando o pacote incluir o executável compilado.
+4. O instalador copia a versão para o perfil do usuário.
 
 ### Pasta de instalação
 
@@ -61,34 +84,7 @@ Não é necessário instalar Visual Studio, MinGW ou qualquer compilador.
 %LOCALAPPDATA%\Nodus
 ```
 
-### Executar sem instalar
-
-Também é possível simplesmente abrir:
-
-```text
-Nodus.exe
-```
-
-### Desinstalação
-
-Depois de instalado, execute:
-
-```text
-%LOCALAPPDATA%\Nodus\DESINSTALAR_NODUS.bat
-```
-
-## Como receber as próximas atualizações
-
-O fluxo padrão do projeto é:
-
-1. alterações são enviadas para `Kaynanwxz/nodus`;
-2. o `README.md` e o changelog são atualizados;
-3. o GitHub Actions compila a versão Windows;
-4. um novo ZIP pronto para uso é entregue.
-
-Para uso normal, o ZIP é o caminho recomendado.
-
-## Build manual
+### Build manual
 
 Se você já tiver MSVC ou MinGW-w64 configurado:
 
@@ -100,6 +96,26 @@ O executável será gerado em:
 
 ```text
 bin\Nodus.exe
+```
+
+O `build.bat` atual não depende mais de `frame_override.h`.
+
+## Como testar a branch 0.4.0
+
+Se você já clonou o projeto:
+
+```bash
+git fetch origin
+git checkout design-reference-v0.4
+git pull origin design-reference-v0.4
+build.bat
+```
+
+Para voltar à versão estável:
+
+```bash
+git checkout main
+git pull origin main
 ```
 
 ## Estrutura
@@ -120,9 +136,20 @@ Nodus/
 └─ README.md
 ```
 
-## Próximas etapas
+## Próximas etapas de design
 
-A evolução planejada é transformar o Nodus de um painel visual em um verdadeiro **orquestrador local de agentes**:
+A 0.4.0 resolve primeiro a **estrutura visual**. Para chegar ainda mais perto da referência final, os próximos passos são:
+
+- substituir parte dos desenhos GDI por assets locais otimizados de gravuras/esculturas;
+- criar retratos individuais dos agentes;
+- adicionar textura de papel e impressão com baixo custo de renderização;
+- refinar proporções após teste em 1920×1080 e tablets;
+- manter a região central legível mesmo com arte mais rica nas bordas;
+- só então avançar nas funções reais de agentes.
+
+## Próximas etapas funcionais
+
+Depois que o shell visual for aprovado:
 
 - execução real de processos com `CreateProcess`;
 - captura de `stdout` e `stderr` usando pipes;
@@ -148,39 +175,35 @@ A evolução planejada é transformar o Nodus de um painel visual em um verdadei
 
 ## Changelog
 
+### 0.4.0 — branch `design-reference-v0.4`
+
+- Overview reconstruído a partir da referência visual aprovada.
+- Hierarquia do dashboard aproximada do mockup: hero → métricas → agents/tasks/activity.
+- Header redesenhado com branding, navegação, busca, status, relógio e profile medallion.
+- Hero editorial com composição clássica/surrealista desenhada em GDI.
+- Agent cards compactos e task table adicionados ao Overview.
+- Activity feed lateral alinhado à referência.
+- Renderização base em 1440×900 escalada para o tamanho real da janela.
+- Tamanho mínimo de janela definido em 1024×640.
+- Abas secundárias atualizadas para compartilhar a nova identidade visual.
+- `build.bat` corrigido para não tentar incluir o arquivo removido `frame_override.h`.
+- README atualizado com fluxo de teste da branch.
+
 ### 0.3.0
 
-- Interface principal redesenhada de verdade em C/Win32.
-- Composição visual aproximada do mockup aprovado em vez de reaproveitar o painel antigo.
-- Estética consolidada como colagem surrealista dark, sem elementos futuristas.
+- Interface principal redesenhada em C/Win32.
+- Estética consolidada como colagem surrealista dark.
 - Cabeçalho próprio integrado à janela, sem barra branca do Windows.
-- Navegação horizontal mantida no topo.
-- Overview reconstruído com hero central, collage strips, métricas e painéis de agentes/atividade.
+- Overview com hero, métricas e painéis de agentes/atividade.
 - Abas Agents, Terminal, Tasks, Activity e Settings redesenhadas.
-- `frame_override.h` removido; o frame agora faz parte diretamente da implementação principal.
-- Instalador refeito para usar um executável já compilado.
-- Removida a necessidade de baixar LLVM/MinGW durante a instalação.
-- Pacote Windows agora inclui `Nodus.exe`, `INSTALAR_NODUS.bat`, `install.ps1` e desinstalador.
-- Workflow de build atualizado para gerar `Nodus-Windows-v0.3.0.zip`.
-- README e changelog atualizados.
+- Instalador simplificado para usar executável já compilado.
+- Workflow de build atualizado para gerar pacote Windows.
 
-### 0.2.3
+### 0.2.x
 
-- Primeira tentativa de remover a barra branca padrão do Windows.
-- Frame customizado separado em `frame_override.h`.
-- Build Windows automatizado validado no GitHub Actions.
-
-### 0.2.2
-
+- Remoção da barra branca padrão do Windows.
 - Direção visual principal aprovada.
-- Colagem surrealista clássica dark definida como identidade oficial.
-- Navegação horizontal no topo definida como padrão.
-
-### 0.2.1
-
 - Projeto renomeado oficialmente para **Nodus**.
-- Executável renomeado para `Nodus.exe`.
-- Diretório de instalação alterado para `%LOCALAPPDATA%\Nodus`.
 
 ---
 
