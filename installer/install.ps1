@@ -55,6 +55,23 @@ try {
         '-O2',
         '-s',
         '-mwindows',
+        '-municode',
+        '-o', $exeOut,
+        '-lgdi32',
+        '-luser32',
+        '-lkernel32'
+    )
+
+    # O codigo usa WinMain ANSI, portanto nao precisamos forcar Unicode no entry point.
+    $frameOverride = Join-Path $root 'src\frame_override.h'
+    if (-not (Test-Path $frameOverride)) { throw "Arquivo src\frame_override.h nao encontrado." }
+
+    $compileArgs = @(
+        '-include', $frameOverride,
+        $source,
+        '-O2',
+        '-s',
+        '-mwindows',
         '-o', $exeOut,
         '-lgdi32',
         '-luser32',
