@@ -1,0 +1,10 @@
+bin/
+*.exe
+*.obj
+*.o
+*.pdb
+*.ilk
+*.log
+*.tmp
+.vscode/
+.idea/
