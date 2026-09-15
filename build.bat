@@ -1,46 +1,57 @@
 @echo off
 setlocal
 cd /d "%~dp0"
+title Nodus 0.5.0 - Tauri Build
 
-where cl >nul 2>nul
-if %errorlevel%==0 goto msvc
+echo ============================================================
+echo   NODUS 0.5.0 - TAURI BUILD
+echo ============================================================
+echo.
 
-where gcc >nul 2>nul
-if %errorlevel%==0 goto mingw
+where node >nul 2>nul
+if errorlevel 1 (
+  echo [ERRO] Node.js nao foi encontrado no PATH.
+  echo Instale Node.js 20 ou superior e tente novamente.
+  goto fail
+)
+
+where npm >nul 2>nul
+if errorlevel 1 (
+  echo [ERRO] npm nao foi encontrado no PATH.
+  goto fail
+)
+
+where cargo >nul 2>nul
+if errorlevel 1 (
+  echo [ERRO] Rust/Cargo nao foi encontrado no PATH.
+  echo Instale Rust pelo rustup e tente novamente.
+  goto fail
+)
+
+if not exist node_modules (
+  echo [+] Instalando dependencias...
+  call npm install
+  if errorlevel 1 goto fail
+)
+
+echo [+] Gerando assets e compilando Nodus...
+call npm run desktop:build
+if errorlevel 1 goto fail
 
 echo.
-echo Nenhum compilador C encontrado.
+echo ============================================================
+echo   BUILD CONCLUIDO
+echo ============================================================
+echo Executavel:
+echo   src-tauri\target\release\nodus.exe
 echo.
-echo Opcoes:
-echo 1. Abra este build.bat dentro do "Developer Command Prompt for Visual Studio"
-echo 2. Ou instale MinGW-w64 e deixe gcc no PATH.
+echo Instalador NSIS:
+echo   src-tauri\target\release\bundle\nsis\
 echo.
-pause
-exit /b 1
-
-:msvc
-echo Compilando Nodus com MSVC...
-if not exist bin mkdir bin
-cl /nologo /O2 /W4 /D_CRT_SECURE_NO_WARNINGS src\main.c user32.lib gdi32.lib /link /SUBSYSTEM:WINDOWS /OUT:bin\Nodus.exe
-if %errorlevel% neq 0 goto fail
-goto done
-
-:mingw
-echo Compilando Nodus com MinGW-w64...
-if not exist bin mkdir bin
-gcc src\main.c -O2 -s -mwindows -o bin\Nodus.exe -lgdi32 -luser32 -lkernel32 -lm
-if %errorlevel% neq 0 goto fail
-goto done
-
-:done
-echo.
-echo OK: bin\Nodus.exe
-echo.
-start "" bin\Nodus.exe
 exit /b 0
 
 :fail
 echo.
-echo Falha na compilacao.
+echo A compilacao do Nodus nao foi concluida.
 pause
 exit /b 1
