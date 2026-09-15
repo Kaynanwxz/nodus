@@ -18,24 +18,39 @@ jobs:
 
       - name: Configure MSVC
         uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
 
       - name: Build Nodus
         shell: cmd
         run: |
           if not exist bin mkdir bin
-          cl /nologo /O2 /W4 /D_CRT_SECURE_NO_WARNINGS /Isrc /FIframe_override.h src\main.c user32.lib gdi32.lib /link /SUBSYSTEM:WINDOWS /OUT:bin\Nodus.exe
+          cl /nologo /O2 /W4 /D_CRT_SECURE_NO_WARNINGS src\main.c user32.lib gdi32.lib /link /SUBSYSTEM:WINDOWS /OUT:bin\Nodus.exe
 
-      - name: Package
+      - name: Prepare package
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           Copy-Item bin\Nodus.exe dist\Nodus.exe
           Copy-Item README.md dist\README.md
-          Compress-Archive -Path dist\Nodus.exe,dist\README.md -DestinationPath Nodus-Windows.zip -Force
+          Copy-Item INSTALAR_NODUS.bat dist\INSTALAR_NODUS.bat
+          Copy-Item installer\install.ps1 dist\install.ps1
+          @'
+@echo off
+setlocal
+set "INSTALL=%LOCALAPPDATA%\Nodus"
+taskkill /IM Nodus.exe /F >nul 2>nul
+rmdir /S /Q "%INSTALL%" >nul 2>nul
+del "%USERPROFILE%\Desktop\Nodus.lnk" >nul 2>nul
+del "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Nodus.lnk" >nul 2>nul
+echo Nodus removido.
+pause
+'@ | Set-Content -Encoding ASCII dist\DESINSTALAR_NODUS.bat
+          Compress-Archive -Path dist\* -DestinationPath Nodus-Windows-v0.3.0.zip -Force
 
       - name: Upload Windows package
         uses: actions/upload-artifact@v4
         with:
-          name: Nodus-Windows
-          path: Nodus-Windows.zip
+          name: Nodus-Windows-v0.3.0
+          path: Nodus-Windows-v0.3.0.zip
           retention-days: 30
