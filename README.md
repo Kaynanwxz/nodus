@@ -174,6 +174,9 @@ A evolução planejada é transformar o Nodus de um painel visual em um verdadei
 - Campo de busca visual integrado ao topo.
 - Navegação horizontal mantida como parte do design aprovado.
 - Workflow de build Windows ajustado para configuração mais confiável do MSVC.
+- Corrigido o caminho do `frame_override.h` para MSVC, MinGW e instalador portátil.
+- Corrigido conflito do identificador `small` com macros dos headers do Windows.
+- Build Windows automatizado validado com sucesso no GitHub Actions.
 - README atualizado.
 
 ### 0.2.2
