@@ -1,0 +1,25 @@
+[package]
+name = "nodus"
+version = "0.5.0"
+description = "Nodus local agent orchestration desktop application"
+authors = ["Kaynan Carvalhaes e Silva"]
+edition = "2021"
+
+[lib]
+name = "nodus_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
