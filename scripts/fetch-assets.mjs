@@ -93,8 +93,8 @@ const heroShade = svgLayer(1200, 280, `
 
 await sharp({ create: { width: 1200, height: 280, channels: 4, background: "#090806" } })
   .composite([
-    { input: celestialHero, left: 0, top: 0, blend: "over", opacity: 0.52 },
-    { input: victoryHero, left: 625, top: 0, blend: "screen", opacity: 0.90 },
+    { input: celestialHero, left: 0, top: 0, blend: "over" },
+    { input: victoryHero, left: 625, top: 0, blend: "screen" },
     { input: heroShade, left: 0, top: 0 },
   ])
   .webp({ quality: 84 })
@@ -118,9 +118,9 @@ const leftCopy = svgLayer(390, 1120, `
 
 await sharp({ create: { width: 390, height: 1120, channels: 4, background: "#070604" } })
   .composite([
-    { input: davidRail, left: 0, top: 0, blend: "screen", opacity: 0.94 },
-    { input: butterfly, left: 155, top: 485, blend: "screen", opacity: 0.92 },
-    { input: eyeRail, left: 0, top: 610, blend: "screen", opacity: 0.86 },
+    { input: davidRail, left: 0, top: 0, blend: "screen" },
+    { input: butterfly, left: 155, top: 485, blend: "screen" },
+    { input: eyeRail, left: 0, top: 610, blend: "screen" },
     { input: leftCopy, left: 0, top: 0 },
   ])
   .webp({ quality: 84 })
@@ -143,8 +143,8 @@ const rightCopy = svgLayer(360, 1120, `
 
 await sharp({ create: { width: 360, height: 1120, channels: 4, background: "#070604" } })
   .composite([
-    { input: mapRail, left: 0, top: 0, blend: "screen", opacity: 0.43 },
-    { input: athenaRail, left: 0, top: 450, blend: "screen", opacity: 0.90 },
+    { input: mapRail, left: 0, top: 0, blend: "screen" },
+    { input: athenaRail, left: 0, top: 450, blend: "screen" },
     { input: rightCopy, left: 0, top: 0 },
   ])
   .webp({ quality: 84 })
@@ -154,8 +154,8 @@ const eyeBottom = await sepia(raw.eye, 860, 180, "cover", "centre");
 const mapBottom = await sepia(raw.celestial, 1200, 180, "cover", "south");
 await sharp({ create: { width: 1200, height: 180, channels: 4, background: "#070604" } })
   .composite([
-    { input: mapBottom, left: 0, top: 0, blend: "screen", opacity: 0.42 },
-    { input: eyeBottom, left: 170, top: 0, blend: "screen", opacity: 0.65 },
+    { input: mapBottom, left: 0, top: 0, blend: "screen" },
+    { input: eyeBottom, left: 170, top: 0, blend: "screen" },
     { input: svgLayer(1200, 180, `<rect width="1200" height="180" fill="#070604" fill-opacity=".28"/>`), left: 0, top: 0 },
   ])
   .webp({ quality: 80 })
