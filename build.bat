@@ -19,16 +19,16 @@ pause
 exit /b 1
 
 :msvc
-echo Compilando com MSVC...
+echo Compilando Nodus com MSVC...
 if not exist bin mkdir bin
-cl /nologo /O2 /W4 /D_CRT_SECURE_NO_WARNINGS src\main.c user32.lib gdi32.lib /link /SUBSYSTEM:WINDOWS /OUT:bin\Nodus.exe
+cl /nologo /O2 /W4 /D_CRT_SECURE_NO_WARNINGS /FIsrc\frame_override.h src\main.c user32.lib gdi32.lib /link /SUBSYSTEM:WINDOWS /OUT:bin\Nodus.exe
 if %errorlevel% neq 0 goto fail
 goto done
 
 :mingw
-echo Compilando com MinGW-w64...
+echo Compilando Nodus com MinGW-w64...
 if not exist bin mkdir bin
-gcc src\main.c -O2 -s -mwindows -o bin\Nodus.exe -lgdi32 -luser32 -lkernel32
+gcc -include src\frame_override.h src\main.c -O2 -s -mwindows -o bin\Nodus.exe -lgdi32 -luser32 -lkernel32
 if %errorlevel% neq 0 goto fail
 goto done
 
