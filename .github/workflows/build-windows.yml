@@ -1,0 +1,44 @@
+name: Build Nodus for Windows
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure MSVC
+        shell: cmd
+        run: call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+
+      - name: Build Nodus
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          if not exist bin mkdir bin
+          cl /nologo /O2 /W4 /D_CRT_SECURE_NO_WARNINGS src\main.c user32.lib gdi32.lib /link /SUBSYSTEM:WINDOWS /OUT:bin\Nodus.exe
+
+      - name: Package
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item bin\Nodus.exe dist\Nodus.exe
+          Copy-Item README.md dist\README.md
+          Copy-Item INSTALAR_NODUS.bat dist\INSTALAR_NODUS.bat
+          Compress-Archive -Path dist\Nodus.exe,dist\README.md,dist\INSTALAR_NODUS.bat -DestinationPath Nodus-Windows.zip -Force
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nodus-Windows
+          path: Nodus-Windows.zip
+          retention-days: 30
