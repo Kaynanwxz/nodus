@@ -15,28 +15,44 @@ function Fail([string]$text) {
     Write-Host "[!] $text" -ForegroundColor Red
 }
 
-Title "NODUS 0.3.0 - INSTALADOR"
-Write-Host "Instalacao local, sem compilador e sem permissao de administrador." -ForegroundColor Gray
+Title "NODUS 0.4.0 - INSTALADOR"
+Write-Host "Instalacao local e sem permissao de administrador." -ForegroundColor Gray
 
 if (-not [Environment]::Is64BitOperatingSystem) {
     throw "Esta versao requer Windows 64-bit."
 }
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$packageRoot = $scriptDir
-$exeSource = Join-Path $packageRoot 'Nodus.exe'
-if (-not (Test-Path $exeSource)) {
-    $candidate = Join-Path (Split-Path -Parent $scriptDir) 'Nodus.exe'
-    if (Test-Path $candidate) { $exeSource = $candidate }
+$repoRoot = Split-Path -Parent $scriptDir
+
+$candidates = @(
+    (Join-Path $scriptDir 'Nodus.exe'),
+    (Join-Path $repoRoot 'Nodus.exe'),
+    (Join-Path $repoRoot 'bin\Nodus.exe')
+)
+
+$exeSource = $null
+foreach ($candidate in $candidates) {
+    if (Test-Path $candidate) {
+        $exeSource = $candidate
+        break
+    }
 }
-if (-not (Test-Path $exeSource)) {
-    throw "Nodus.exe nao foi encontrado ao lado do instalador. Extraia o ZIP completo antes de instalar."
+
+if (-not $exeSource) {
+    $buildFile = Join-Path $repoRoot 'build.bat'
+    if (Test-Path $buildFile) {
+        throw "Nodus.exe ainda nao foi compilado. Voce esta usando o codigo-fonte. Execute build.bat primeiro. Se nao tiver compilador, baixe o ZIP gerado pelo GitHub Actions, que ja inclui Nodus.exe."
+    }
+
+    throw "Nodus.exe nao foi encontrado no pacote. Baixe e extraia o ZIP completo gerado pelo GitHub Actions."
 }
 
 $installDir = Join-Path $env:LOCALAPPDATA 'Nodus'
 $target = Join-Path $installDir 'Nodus.exe'
 
 try {
+    Step "Executavel encontrado: $exeSource"
     Step "Fechando versoes antigas do Nodus..."
     Get-Process -Name 'Nodus' -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Milliseconds 300
@@ -74,12 +90,12 @@ Remove-Item $installDir -Force -Recurse
         $shortcut = $shell.CreateShortcut($shortcutPath)
         $shortcut.TargetPath = $target
         $shortcut.WorkingDirectory = $installDir
-        $shortcut.Description = 'Nodus 0.3.0'
+        $shortcut.Description = 'Nodus 0.4.0'
         $shortcut.Save()
     }
 
     Title "INSTALACAO CONCLUIDA"
-    Write-Host "Nodus 0.3.0 instalado com sucesso." -ForegroundColor Green
+    Write-Host "Nodus 0.4.0 instalado com sucesso." -ForegroundColor Green
     Write-Host "Abrindo Nodus..." -ForegroundColor Green
     Start-Process $target
     Start-Sleep -Seconds 1
