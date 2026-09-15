@@ -2,7 +2,7 @@ name: Build Nodus for Windows
 
 on:
   push:
-    branches: [main]
+    branches: [main, design-reference-v0.4]
   workflow_dispatch:
 
 permissions:
@@ -35,11 +35,11 @@ jobs:
           Copy-Item README.md dist\README.md
           Copy-Item INSTALAR_NODUS.bat dist\INSTALAR_NODUS.bat
           Copy-Item installer\install.ps1 dist\install.ps1
-          Compress-Archive -Path dist\* -DestinationPath Nodus-Windows-v0.3.0.zip -Force
+          Compress-Archive -Path dist\* -DestinationPath Nodus-Windows-v0.4.0.zip -Force
 
       - name: Upload Windows package
         uses: actions/upload-artifact@v4
         with:
-          name: Nodus-Windows-v0.3.0
-          path: Nodus-Windows-v0.3.0.zip
+          name: Nodus-Windows-v0.4.0
+          path: Nodus-Windows-v0.4.0.zip
           retention-days: 30
