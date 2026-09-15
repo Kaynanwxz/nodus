@@ -63,8 +63,8 @@ static void nodus_draw_overlay(HWND hwnd) {
     HDC dc;
     HBRUSH bg;
     HBRUSH lineBrush;
-    HFONT small;
-    HFONT tiny;
+    HFONT fontSmall;
+    HFONT fontTiny;
     SYSTEMTIME st;
     char buf[64];
     int w;
@@ -84,12 +84,12 @@ static void nodus_draw_overlay(HWND hwnd) {
     FillRect(dc, &r, bg);
     DeleteObject(bg);
 
-    small = CreateFontA(
+    fontSmall = CreateFontA(
         -13, 0, 0, 0, FW_SEMIBOLD, FALSE, FALSE, FALSE,
         DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         CLEARTYPE_QUALITY, FIXED_PITCH, "Consolas"
     );
-    tiny = CreateFontA(
+    fontTiny = CreateFontA(
         -11, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
         DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         CLEARTYPE_QUALITY, FIXED_PITCH, "Consolas"
@@ -102,21 +102,21 @@ static void nodus_draw_overlay(HWND hwnd) {
     lineBrush = CreateSolidBrush(RGB(82,66,49));
     FrameRect(dc, &r, lineBrush);
     DeleteObject(lineBrush);
-    nodus_draw_text(dc, tiny, RGB(119,105,91), w - 414, 36,
+    nodus_draw_text(dc, fontTiny, RGB(119,105,91), w - 414, 36,
                     "Search agents, tasks...");
 
     GetLocalTime(&st);
     wsprintfA(buf, "%02d:%02d:%02d", st.wHour, st.wMinute, st.wSecond);
-    nodus_draw_text(dc, small, RGB(229,216,194), w - 210, 26, buf);
+    nodus_draw_text(dc, fontSmall, RGB(229,216,194), w - 210, 26, buf);
     wsprintfA(buf, "%02d/%02d/%04d", st.wDay, st.wMonth, st.wYear);
-    nodus_draw_text(dc, tiny, RGB(126,116,104), w - 210, 46, buf);
+    nodus_draw_text(dc, fontTiny, RGB(126,116,104), w - 210, 46, buf);
 
-    nodus_draw_text(dc, small, RGB(136,126,114), w - 91, 31, "_");
-    nodus_draw_text(dc, tiny, RGB(136,126,114), w - 58, 33, "[]");
-    nodus_draw_text(dc, small, RGB(232,221,202), w - 25, 31, "X");
+    nodus_draw_text(dc, fontSmall, RGB(136,126,114), w - 91, 31, "_");
+    nodus_draw_text(dc, fontTiny, RGB(136,126,114), w - 58, 33, "[]");
+    nodus_draw_text(dc, fontSmall, RGB(232,221,202), w - 25, 31, "X");
 
-    DeleteObject(small);
-    DeleteObject(tiny);
+    DeleteObject(fontSmall);
+    DeleteObject(fontTiny);
     ReleaseDC(hwnd, dc);
 }
 
