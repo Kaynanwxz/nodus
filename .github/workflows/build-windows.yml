@@ -35,17 +35,6 @@ jobs:
           Copy-Item README.md dist\README.md
           Copy-Item INSTALAR_NODUS.bat dist\INSTALAR_NODUS.bat
           Copy-Item installer\install.ps1 dist\install.ps1
-          @'
-@echo off
-setlocal
-set "INSTALL=%LOCALAPPDATA%\Nodus"
-taskkill /IM Nodus.exe /F >nul 2>nul
-rmdir /S /Q "%INSTALL%" >nul 2>nul
-del "%USERPROFILE%\Desktop\Nodus.lnk" >nul 2>nul
-del "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Nodus.lnk" >nul 2>nul
-echo Nodus removido.
-pause
-'@ | Set-Content -Encoding ASCII dist\DESINSTALAR_NODUS.bat
           Compress-Archive -Path dist\* -DestinationPath Nodus-Windows-v0.3.0.zip -Force
 
       - name: Upload Windows package
