@@ -1,115 +1,61 @@
 # Nodus
 
-**Nodus** é um aplicativo desktop local para organizar, observar e futuramente controlar múltiplos agentes de IA em uma única superfície.
+**Nodus** é um aplicativo desktop local para organizar, observar e futuramente controlar múltiplos agentes de IA em uma única interface.
 
-O nome vem do latim *nodus* — **nó, vínculo, ponto de conexão**.
+O nome vem do latim *nodus* — **nó, ligação, ponto de conexão**.
 
-## Estado atual
+## Versão atual
 
-Versão em desenvolvimento: **0.5.0 — migração para Tauri + reconstrução visual de alta fidelidade**.
+**0.5.0 — Tauri desktop redesign**
 
-Branch atual:
+Esta passa a ser a versão oficial do projeto.
 
-```text
-tauri-v0.5
-```
-
-A versão 0.5 abandona a limitação visual do renderer GDI/Win32 anterior e passa a usar:
+A implementação antiga em C/Win32 foi removida do fluxo principal. O Nodus agora usa:
 
 - **Tauri 2** para o aplicativo desktop;
-- **Rust** para o núcleo nativo;
 - **React + TypeScript** para a interface;
-- **Vite** para build do frontend;
-- **CSS** para a composição editorial;
-- assets locais otimizados em **WebP**;
-- imagens clássicas/gravuras reais em vez de esculturas simplificadas desenhadas com polígonos.
-
-O objetivo é manter o Nodus leve e local-first, mas permitir uma interface muito mais próxima da referência aprovada.
+- **Vite** para o frontend;
+- **Rust** para o núcleo desktop;
+- **WebP locais e otimizados** para a composição visual.
 
 ## Direção visual
 
-A referência oficial continua sendo a composição dark clássica/surrealista aprovada em 15/09/2026.
+O design segue a referência aprovada: uma interface escura editorial com colagem clássica/surrealista, mantendo o centro funcional e a arte mais rica nas bordas.
 
-Características obrigatórias:
+Elementos principais:
 
-- preto, carvão e sépia;
-- dourado/ocre e marfim envelhecido;
-- esculturas, bustos e gravuras reais;
+- fundo preto/carvão;
+- dourado, ocre, marfim e sépia;
+- esculturas e gravuras clássicas;
 - mapas e diagramas celestes;
-- olhos, anatomia, borboletas e fragmentos editoriais;
-- tipografia serifada de caráter editorial;
-- recortes/papel envelhecido;
-- dashboard denso sem aparência de SaaS genérico;
-- arte concentrada nas bordas e hero, preservando legibilidade no centro;
-- janela sem a barra branca padrão do Windows;
-- navegação superior integrada ao design.
-
-A 0.5 não tenta mais desenhar estátuas com primitivas geométricas. A arte é gerada a partir de imagens reais e empacotada com o aplicativo.
-
-## Interface 0.5
-
-### Overview
-
-A tela principal contém:
-
-- header próprio do Nodus;
-- abas `Overview`, `Agents`, `Terminal`, `Tasks`, `Activity` e `Settings`;
-- busca no header;
-- relógio local;
-- controles próprios de minimizar, maximizar e fechar;
-- hero editorial com a frase `A MORE THOUGHTFUL TOMORROW, COMPOSED TODAY.`;
-- colagens laterais com escultura, gravura, olho, mapa e fragmentos de texto;
-- quatro métricas principais;
+- papel envelhecido e recortes editoriais;
+- tipografia serifada de destaque;
+- header próprio, sem barra branca padrão do Windows;
+- hero artístico;
+- métricas compactas;
 - cards de agentes;
-- tabela compacta de tarefas;
-- activity feed vertical.
+- tabela de tarefas;
+- painel de atividade.
 
-### Páginas secundárias
+Os assets visuais agora são arquivos reais do projeto, em vez de esculturas desenhadas com primitivas GDI.
 
-Também existem shells visuais próprios para:
+## Abas
 
-- Agents;
-- Terminal;
-- Tasks;
-- Activity;
-- Settings.
+- `Overview`
+- `Agents`
+- `Terminal`
+- `Tasks`
+- `Activity`
+- `Settings`
 
-Os dados desta etapa ainda são demonstrativos. A prioridade da 0.5 é acertar primeiro o shell visual e a arquitetura do desktop app.
+## Rodar em desenvolvimento
 
-## Assets
+Pré-requisitos:
 
-Os assets visuais são gerados por:
-
-```text
-scripts/fetch-assets.mjs
-```
-
-O script baixa imagens clássicas de fontes públicas, converte para WebP, aplica tratamento sépia/dark e monta os elementos utilizados pelo Nodus.
-
-Os arquivos finais são criados em:
-
-```text
-public/assets/
-```
-
-Essa pasta é gerada automaticamente e não precisa ser versionada.
-
-As fontes e licenças utilizadas estão documentadas em:
-
-```text
-docs/ASSET_SOURCES.md
-```
-
-## Como rodar em desenvolvimento
-
-### Requisitos
-
-No Windows:
-
-- Node.js 20 ou superior;
-- npm;
-- Rust/Cargo via rustup;
-- Microsoft C++ Build Tools / WebView2 normalmente disponíveis no ambiente Tauri para Windows.
+- Node.js 20+
+- npm
+- Rust + Cargo
+- dependências do Tauri para Windows
 
 Depois:
 
@@ -118,13 +64,11 @@ npm install
 npm run desktop
 ```
 
-O primeiro start também gera os assets automaticamente.
-
-## Build do executável
+## Build Windows
 
 Use:
 
-```text
+```bat
 build.bat
 ```
 
@@ -135,59 +79,29 @@ npm install
 npm run desktop:build
 ```
 
-O executável release fica em:
+Saídas principais:
 
 ```text
 src-tauri\target\release\nodus.exe
-```
-
-O instalador Windows gerado pelo Tauri/NSIS fica em:
-
-```text
 src-tauri\target\release\bundle\nsis\
 ```
 
+O instalador oficial passa a ser o pacote NSIS gerado pelo próprio Tauri.
+
 ## GitHub Actions
 
-O workflow:
+Cada atualização relevante do projeto também atualiza este README.
 
-```text
-.github/workflows/build-windows.yml
-```
+O workflow de Windows:
 
-compila a versão Windows automaticamente na `main` e na branch `tauri-v0.5`.
+1. instala Node;
+2. instala Rust;
+3. instala as dependências do frontend;
+4. compila o Tauri;
+5. gera o executável e instalador;
+6. publica um artifact para teste.
 
-O artifact produzido é:
-
-```text
-Nodus-Windows-v0.5.0.zip
-```
-
-Ele contém:
-
-```text
-Nodus.exe
-Nodus-Setup-v0.5.0.exe
-README.md
-```
-
-Para testar sem instalar, abra `Nodus.exe`.
-
-Para instalar normalmente, execute `Nodus-Setup-v0.5.0.exe`.
-
-## Como atualizar sua cópia local
-
-Se você já clonou o projeto:
-
-```bash
-git fetch origin
-git checkout tauri-v0.5
-git pull origin tauri-v0.5
-npm install
-npm run desktop
-```
-
-## Estrutura atual
+## Estrutura
 
 ```text
 Nodus/
@@ -195,107 +109,68 @@ Nodus/
 │  └─ workflows/
 │     └─ build-windows.yml
 ├─ docs/
-│  ├─ DESIGN.md
-│  └─ ASSET_SOURCES.md
+├─ public/
+│  └─ assets/
 ├─ scripts/
-│  └─ fetch-assets.mjs
 ├─ src/
 │  ├─ App.tsx
 │  ├─ main.tsx
 │  ├─ styles.css
-│  ├─ hero.css
-│  └─ main.c              # implementação Win32 antiga, mantida temporariamente como histórico
+│  └─ hero.css
 ├─ src-tauri/
-│  ├─ capabilities/
-│  │  └─ default.json
 │  ├─ src/
-│  │  ├─ lib.rs
-│  │  └─ main.rs
 │  ├─ Cargo.toml
-│  ├─ build.rs
 │  └─ tauri.conf.json
-├─ index.html
-├─ package.json
-├─ vite.config.ts
 ├─ build.bat
-└─ README.md
+├─ package.json
+├─ tsconfig.json
+└─ vite.config.ts
 ```
 
-## Arquitetura planejada
+## Objetivo funcional
 
-```text
-React / TypeScript UI
-        ↓
-      Tauri
-        ↓
-       Rust
-        ↓
- Agent processes / terminals / files / Git / local tools
-        ↓
- SQLite + logs + workspaces
-```
+Depois que a interface estiver visualmente fechada, o Nodus evolui para um verdadeiro orquestrador local:
 
-A interface continua separada do núcleo funcional. Isso permite uma UI rica sem obrigar o core de agentes a rodar em JavaScript.
-
-## Próximas etapas
-
-Depois da aprovação visual da 0.5:
-
-- processo real de criação/edição de agentes;
-- start, stop e restart de processos;
-- captura de `stdout` e `stderr`;
-- terminal real por agente;
-- workspaces locais;
+- execução real de processos;
+- integração com agentes locais e externos;
+- terminal por agente;
+- start, stop e restart;
+- workspaces individuais;
 - tarefas persistentes;
-- métricas reais de CPU/memória;
-- histórico de atividades;
-- SQLite local;
+- histórico de execução;
+- métricas reais;
 - comunicação entre agentes;
 - permissões por agente;
-- integração com Git;
-- Mission Control para distribuir objetivos.
+- memória e configuração locais;
+- distribuição de objetivos entre vários agentes.
 
 ## Princípios
 
-- **Local-first:** o usuário continua no controle da execução.
-- **Leve:** Tauri/WebView em vez de empacotar Chromium como Electron.
-- **Visualmente fiel:** assets reais e composição editorial, não imitações geométricas de esculturas.
-- **Observável:** agentes e tarefas devem mostrar claramente seu estado.
-- **Modular:** UI, core e integrações permanecem separados.
-- **Identidade própria:** o Nodus não deve parecer um dashboard SaaS/cyberpunk genérico.
+- **Leve:** sem Electron.
+- **Local-first:** pensado primeiro para uso pessoal no próprio computador.
+- **Visual:** design forte sem sacrificar legibilidade.
+- **Controlável:** o usuário continua sendo a autoridade sobre ações e permissões.
+- **Modular:** integrações futuras não devem transformar o app em um sistema pesado.
 
 ## Changelog
 
-### 0.5.0 — branch `tauri-v0.5`
+### 0.5.0
 
-- Projeto migrado para Tauri 2.
-- Novo core desktop em Rust.
-- Interface reconstruída em React + TypeScript + CSS.
-- Vite adicionado ao pipeline.
-- Janela Tauri frameless com controles próprios.
-- Overview reconstruído conforme a referência aprovada.
-- Hero editorial com tipografia sobre composição clássica real.
-- Colagens laterais e inferiores baseadas em imagens reais.
-- Gerador de assets em WebP com Sharp.
-- Retratos clássicos individuais para agentes.
-- Métricas, Agents, Tasks e Activity reorganizados de acordo com a referência.
-- Páginas Agents, Terminal, Tasks, Activity e Settings recriadas no novo shell.
-- Build local migrado de C/Win32 para Tauri.
-- GitHub Actions migrado para Node + Rust + Tauri.
-- Empacotamento Windows agora gera executável e instalador NSIS.
-- README refeito para refletir a nova arquitetura.
+- Migração de C/Win32 para **Tauri 2 + React + TypeScript + Rust**.
+- Antiga implementação Win32 retirada do fluxo oficial.
+- Assets clássicos reais adicionados ao projeto.
+- Removido o antigo instalador manual em PowerShell/BAT.
+- Instalador oficial passa a ser o NSIS gerado pelo Tauri.
+- Header desktop customizado mantido.
+- Overview reconstruído com hero, métricas, agents, tasks e activity.
+- Abas secundárias preservadas.
+- Pipeline Windows refeito para Tauri.
+- Build sem dependência de download de assets em tempo de compilação.
+- README consolidado para a nova arquitetura.
 
-### 0.4.0
+### 0.4.x e anteriores
 
-- Última versão da tentativa de reproduzir a interface diretamente em C/Win32/GDI.
-- Serviu para validar composição e comportamento da janela, mas a renderização artística foi limitada pela abordagem.
-
-### 0.3.x e anteriores
-
-- Primeiras versões nativas em C/Win32.
-- Remoção da barra branca padrão do Windows.
-- Definição da identidade clássica/surrealista dark.
-- Projeto renomeado oficialmente para Nodus.
+Versões históricas baseadas em C/Win32. Não são mais a implementação oficial.
 
 ---
 
