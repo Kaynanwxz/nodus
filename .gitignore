@@ -13,7 +13,6 @@ bin/
 node_modules/
 dist/
 .asset-cache/
-public/assets/
 src-tauri/target/
 *.msi
 *.dmg
