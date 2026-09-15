@@ -4,8 +4,9 @@
   "version": "0.5.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 1420",
-    "build": "tsc -b && vite build",
+    "assets": "node scripts/fetch-assets.mjs",
+    "dev": "npm run assets && vite --host 127.0.0.1 --port 1420",
+    "build": "npm run assets && tsc -b && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
     "desktop": "tauri dev",
@@ -21,6 +22,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "sharp": "^0.33.5",
     "typescript": "^5.6.3",
     "vite": "^5.4.10"
   }
