@@ -172,6 +172,7 @@ Depois que a interface estiver visualmente fechada, o Nodus evolui para um verda
 - Corrigido o `src-tauri/icons/icon.ico` inválido que causava `failed to parse icon ... failed to fill whole buffer` no build Windows. O ícone agora contém sete resoluções e tem o PNG da marca como imagem-base.
 - Reconstruídos os WebP inválidos do hero e das laterais e incluído `bottom-center.webp`, antes ausente. A verificação de assets agora rejeita arquivos WebP ausentes ou com estrutura inválida antes do build.
 - `build.bat` passou a atualizar dependências em toda execução e a conferir o executável e o instalador gerados, mantendo o fluxo em `git pull origin main` seguido de `build.bat`.
+- Removida a minificação fixa com `esbuild`; Vite 5 e Vite 8 agora usam seus minificadores padrão, evitando falha de build em instalações com Vite 8.
 - README consolidado para a nova arquitetura.
 
 ### 0.4.x e anteriores
