@@ -174,6 +174,7 @@ Depois que a interface estiver visualmente fechada, o Nodus evolui para um verda
 - Build sem dependência de download de assets em tempo de compilação.
 - Vite deixa de observar `src-tauri/target/**`, evitando `EBUSY` com executáveis temporários do Cargo no Windows.
 - Corrigido o `src-tauri/icons/icon.ico` inválido que causava `failed to parse icon ... failed to fill whole buffer` no build Windows. O ícone agora contém sete resoluções e tem o PNG da marca como imagem-base.
+- Reconstruídos os WebP inválidos do hero e das laterais e incluído `bottom-center.webp`, antes ausente. A verificação de assets agora rejeita arquivos WebP ausentes ou com estrutura inválida antes do build.
 - README consolidado para a nova arquitetura.
 
 ### 0.4.x e anteriores
@@ -183,3 +184,4 @@ Versões históricas baseadas em C/Win32. Não são mais a implementação ofici
 ---
 
 > *Nodus*: nó, vínculo, conexão.
+
