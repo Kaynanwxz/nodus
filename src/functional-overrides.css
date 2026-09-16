@@ -1,0 +1,84 @@
+/* Small functional states added after the main 0.6 interface pass. */
+
+.switch {
+  width: 38px;
+  height: 22px;
+  padding: 2px;
+  border: 1px solid rgba(222,190,146,.12);
+  border-radius: 999px;
+  background: rgba(255,255,255,.035);
+  cursor: pointer;
+  transition: background-color 240ms ease, border-color 240ms ease;
+}
+.switch i {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #82796e;
+  transform: translateX(0);
+  transition: transform 300ms var(--ease-soft), background-color 240ms ease, box-shadow 240ms ease;
+}
+.switch.on {
+  border-color: rgba(115,190,150,.24);
+  background: rgba(74,140,103,.12);
+}
+.switch.on i {
+  transform: translateX(16px);
+  background: #73c49a;
+  box-shadow: 0 0 0 4px rgba(104,201,154,.07);
+}
+
+.agent-control-strip .danger-button {
+  color: #b98379;
+  border-color: rgba(175,82,68,.14);
+}
+.agent-control-strip .danger-button:hover {
+  color: #e2aaa0;
+  background: rgba(141,55,43,.13);
+  border-color: rgba(190,86,72,.24);
+}
+
+.drop-banner {
+  margin: 10px 22px 0;
+  border: 1px dashed rgba(210,163,101,.38);
+  border-radius: 11px;
+  background: rgba(191,133,67,.08);
+  color: #d9b47e;
+  padding: 10px 12px;
+  font-size: 10px;
+  text-align: center;
+  animation: drop-pulse 1.2s ease-in-out infinite alternate;
+}
+@keyframes drop-pulse {
+  from { background: rgba(191,133,67,.055); border-color: rgba(210,163,101,.26); }
+  to { background: rgba(191,133,67,.11); border-color: rgba(222,177,117,.48); }
+}
+.detail-overlay.dropping .agent-detail {
+  box-shadow: -40px 0 100px rgba(0,0,0,.45), inset 0 0 0 1px rgba(204,151,80,.16);
+}
+.terminal-drop-hint {
+  border-top: 1px solid rgba(230,208,177,.055);
+  color: #665f57;
+  padding: 7px 12px 8px;
+  font-size: 8px;
+  letter-spacing: .02em;
+}
+
+.task-state.failed {
+  color: #c9897c;
+  background: rgba(127,50,41,.12);
+}
+.activity-marker.error {
+  background: #c16d60;
+  box-shadow: 0 0 0 3px rgba(193,109,96,.06);
+}
+
+@media (max-width: 760px) {
+  .switch { flex: 0 0 38px; }
+  .drop-banner { margin-inline: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drop-banner { animation: none; }
+}
