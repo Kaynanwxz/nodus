@@ -1,4 +1,6 @@
-use chrono::{DateTime, Utc};
+mod platform;
+
+use chrono::Utc;
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -120,6 +122,16 @@ struct CommandResult {
     stderr: String,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExportBundle {
+    agents: Vec<Agent>,
+    tasks: Vec<TaskItem>,
+    permissions: Vec<PermissionSet>,
+    memory: Vec<MemoryEntry>,
+    exported_at: String,
+}
+
 fn now() -> String {
     Utc::now().to_rfc3339()
 }
@@ -128,6 +140,7 @@ fn init_db(conn: &Connection) -> Result<(), String> {
     conn.execute_batch(
         r#"
         PRAGMA journal_mode=WAL;
+        PRAGMA foreign_keys=ON;
         CREATE TABLE IF NOT EXISTS agents (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
@@ -277,9 +290,7 @@ fn list_agents(state: State<'_, AppState>) -> Result<Vec<Agent>, String> {
     let mut stmt = conn
         .prepare("SELECT id,name,role,description,command,workspace,provider,model,status,pid,created_at FROM agents ORDER BY created_at ASC")
         .map_err(|e| e.to_string())?;
-    let rows = stmt
-        .query_map([], row_to_agent)
-        .map_err(|e| e.to_string())?;
+    let rows = stmt.query_map([], row_to_agent).map_err(|e| e.to_string())?;
     rows.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())
 }
 
@@ -308,7 +319,9 @@ fn update_agent(id: String, input: AgentInput, state: State<'_, AppState>) -> Re
         "UPDATE agents SET name=?2,role=?3,description=?4,command=?5,workspace=?6,provider=?7,model=?8 WHERE id=?1",
         params![id, input.name, input.role, input.description, input.command, input.workspace, input.provider, input.model],
     ).map_err(|e| e.to_string())?;
-    get_agent(&conn, &id)
+    let agent = get_agent(&conn, &id)?;
+    log_activity(&conn, "agent", &agent.name, "updated agent", "Configuration changed", "info")?;
+    Ok(agent)
 }
 
 #[tauri::command]
@@ -316,6 +329,7 @@ fn delete_agent(id: String, state: State<'_, AppState>) -> Result<(), String> {
     let _ = stop_agent(id.clone(), state.clone());
     let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
     let agent = get_agent(&conn, &id)?;
+    conn.execute("UPDATE tasks SET agent_id=NULL WHERE agent_id=?1", params![id]).map_err(|e| e.to_string())?;
     conn.execute("DELETE FROM agents WHERE id=?1", params![id]).map_err(|e| e.to_string())?;
     conn.execute("DELETE FROM permissions WHERE agent_id=?1", params![id]).map_err(|e| e.to_string())?;
     conn.execute("DELETE FROM memory WHERE agent_id=?1", params![id]).map_err(|e| e.to_string())?;
@@ -346,15 +360,21 @@ fn shell_command(command: &str, workspace: &str) -> Command {
 
 #[tauri::command]
 fn start_agent(id: String, confirmed: bool, state: State<'_, AppState>) -> Result<Agent, String> {
-    let mut processes = state.processes.lock().map_err(|_| "process lock poisoned")?;
-    if processes.contains_key(&id) {
-        let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
-        return get_agent(&conn, &id);
+    {
+        let processes = state.processes.lock().map_err(|_| "process lock poisoned")?;
+        if processes.contains_key(&id) {
+            let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
+            return get_agent(&conn, &id);
+        }
     }
 
-    let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
-    let agent = get_agent(&conn, &id)?;
-    require_permission(&conn, &id, "terminal", confirmed)?;
+    let agent = {
+        let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
+        let agent = get_agent(&conn, &id)?;
+        require_permission(&conn, &id, "terminal", confirmed)?;
+        agent
+    };
+
     if agent.command.trim().is_empty() {
         return Err("This agent has no start command".into());
     }
@@ -366,7 +386,9 @@ fn start_agent(id: String, confirmed: bool, state: State<'_, AppState>) -> Resul
         .spawn()
         .map_err(|e| format!("Failed to start {}: {e}", agent.name))?;
     let pid = child.id();
-    processes.insert(id.clone(), child);
+    state.processes.lock().map_err(|_| "process lock poisoned")?.insert(id.clone(), child);
+
+    let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
     conn.execute("UPDATE agents SET status='Running', pid=?2 WHERE id=?1", params![id, pid as i64])
         .map_err(|e| e.to_string())?;
     log_activity(&conn, "process", &agent.name, "started agent", &format!("PID {pid}"), "success")?;
@@ -375,13 +397,17 @@ fn start_agent(id: String, confirmed: bool, state: State<'_, AppState>) -> Resul
 
 #[tauri::command]
 fn stop_agent(id: String, state: State<'_, AppState>) -> Result<Agent, String> {
-    let mut processes = state.processes.lock().map_err(|_| "process lock poisoned")?;
-    let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
-    let agent = get_agent(&conn, &id)?;
-    if let Some(mut child) = processes.remove(&id) {
+    let agent = {
+        let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
+        get_agent(&conn, &id)?
+    };
+
+    if let Some(mut child) = state.processes.lock().map_err(|_| "process lock poisoned")?.remove(&id) {
         let _ = child.kill();
         let _ = child.wait();
     }
+
+    let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
     conn.execute("UPDATE agents SET status='Stopped', pid=NULL WHERE id=?1", params![id])
         .map_err(|e| e.to_string())?;
     log_activity(&conn, "process", &agent.name, "stopped agent", "", "warn")?;
@@ -404,15 +430,22 @@ fn run_agent_command(
     if command.trim().is_empty() {
         return Err("Command is empty".into());
     }
-    let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
-    let agent = get_agent(&conn, &id)?;
-    require_permission(&conn, &id, "terminal", confirmed)?;
+
+    let agent = {
+        let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
+        let agent = get_agent(&conn, &id)?;
+        require_permission(&conn, &id, "terminal", confirmed)?;
+        agent
+    };
+
     let output = shell_command(&command, &agent.workspace)
         .output()
         .map_err(|e| format!("Failed to run command: {e}"))?;
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
     let status = output.status.code().unwrap_or(-1);
+
+    let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
     log_activity(
         &conn,
         "terminal",
@@ -440,6 +473,40 @@ fn open_workspace(id: String, confirmed: bool, state: State<'_, AppState>) -> Re
     Command::new("xdg-open").arg(&agent.workspace).spawn().map_err(|e| e.to_string())?;
     log_activity(&conn, "files", &agent.name, "opened workspace", &agent.workspace, "info")?;
     Ok(())
+}
+
+#[tauri::command]
+fn attach_files(id: String, paths: Vec<String>, confirmed: bool, state: State<'_, AppState>) -> Result<Vec<String>, String> {
+    if paths.is_empty() {
+        return Ok(Vec::new());
+    }
+    let agent = {
+        let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
+        let agent = get_agent(&conn, &id)?;
+        require_permission(&conn, &id, "files", confirmed)?;
+        agent
+    };
+    if agent.workspace.trim().is_empty() || !Path::new(&agent.workspace).exists() {
+        return Err("Workspace does not exist".into());
+    }
+
+    let inbox = Path::new(&agent.workspace).join(".nodus").join("inbox");
+    fs::create_dir_all(&inbox).map_err(|e| e.to_string())?;
+    let mut copied = Vec::new();
+    for raw in paths {
+        let source = PathBuf::from(&raw);
+        if !source.is_file() {
+            continue;
+        }
+        let Some(name) = source.file_name() else { continue; };
+        let target = inbox.join(name);
+        fs::copy(&source, &target).map_err(|e| format!("Failed to copy {}: {e}", source.display()))?;
+        copied.push(target.to_string_lossy().to_string());
+    }
+
+    let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
+    log_activity(&conn, "files", &agent.name, "attached files", &format!("{} file(s) copied to .nodus/inbox", copied.len()), "info")?;
+    Ok(copied)
 }
 
 #[tauri::command]
@@ -491,7 +558,9 @@ fn set_task_status(id: String, status: String, state: State<'_, AppState>) -> Re
 #[tauri::command]
 fn delete_task(id: String, state: State<'_, AppState>) -> Result<(), String> {
     let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
+    let title: Option<String> = conn.query_row("SELECT title FROM tasks WHERE id=?1", params![id], |r| r.get(0)).optional().map_err(|e| e.to_string())?;
     conn.execute("DELETE FROM tasks WHERE id=?1", params![id]).map_err(|e| e.to_string())?;
+    if let Some(title) = title { log_activity(&conn, "task", "Nodus", "deleted task", &title, "warn")?; }
     Ok(())
 }
 
@@ -574,15 +643,6 @@ fn delete_memory(id: i64, state: State<'_, AppState>) -> Result<(), String> {
     Ok(())
 }
 
-#[derive(Serialize, Deserialize)]
-struct ExportBundle {
-    agents: Vec<Agent>,
-    tasks: Vec<TaskItem>,
-    permissions: Vec<PermissionSet>,
-    memory: Vec<MemoryEntry>,
-    exported_at: String,
-}
-
 #[tauri::command]
 fn export_config(state: State<'_, AppState>) -> Result<String, String> {
     let agents = list_agents(state.clone())?;
@@ -599,6 +659,10 @@ fn export_config(state: State<'_, AppState>) -> Result<String, String> {
 fn backup_database(state: State<'_, AppState>) -> Result<String, String> {
     let backup_dir = state.data_dir.join("backups");
     fs::create_dir_all(&backup_dir).map_err(|e| e.to_string())?;
+    {
+        let conn = state.db.lock().map_err(|_| "database lock poisoned")?;
+        conn.execute_batch("PRAGMA wal_checkpoint(FULL);").map_err(|e| e.to_string())?;
+    }
     let target = backup_dir.join(format!("nodus-{}.db", Utc::now().format("%Y%m%d-%H%M%S")));
     fs::copy(state.data_dir.join("nodus.db"), &target).map_err(|e| e.to_string())?;
     Ok(target.to_string_lossy().to_string())
@@ -621,8 +685,9 @@ fn setup_state(app: &AppHandle) -> Result<AppState, String> {
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
-            let state = setup_state(&app.handle()).map_err(std::io::Error::other)?;
+            let state = setup_state(app.handle()).map_err(std::io::Error::other)?;
             app.manage(state);
+            platform::setup_tray(app)?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -635,6 +700,7 @@ pub fn run() {
             restart_agent,
             run_agent_command,
             open_workspace,
+            attach_files,
             list_tasks,
             create_task,
             set_task_status,
@@ -649,6 +715,10 @@ pub fn run() {
             export_config,
             backup_database,
             app_data_path,
+            platform::hide_to_tray,
+            platform::show_main_window,
+            platform::is_autostart_enabled,
+            platform::set_autostart,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Nodus");
