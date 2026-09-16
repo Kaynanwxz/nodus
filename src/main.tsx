@@ -5,6 +5,7 @@ import "./styles.css";
 import "./hero.css";
 import "./experience.css";
 import "./functional.css";
+import "./functional-overrides.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
