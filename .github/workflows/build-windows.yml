@@ -2,7 +2,7 @@ name: Build Nodus Tauri for Windows
 
 on:
   push:
-    branches: [main, tauri-v0.5]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -35,14 +35,13 @@ jobs:
           Copy-Item src-tauri\target\release\nodus.exe dist-package\Nodus.exe
           $installer = Get-ChildItem src-tauri\target\release\bundle\nsis\*.exe | Select-Object -First 1
           if (-not $installer) { throw "NSIS installer not found" }
-          Copy-Item $installer.FullName dist-package\Nodus-Setup-v0.5.0.exe
+          Copy-Item $installer.FullName dist-package\Nodus-Setup-v0.6.0.exe
           Copy-Item README.md dist-package\README.md
-          Compress-Archive -Path dist-package\* -DestinationPath Nodus-Windows-v0.5.0.zip -Force
+          Compress-Archive -Path dist-package\* -DestinationPath Nodus-Windows-v0.6.0.zip -Force
 
       - name: Upload Windows package
         uses: actions/upload-artifact@v4
         with:
-          name: Nodus-Windows-v0.5.0
-          path: Nodus-Windows-v0.5.0.zip
+          name: Nodus-Windows-v0.6.0
+          path: Nodus-Windows-v0.6.0.zip
           retention-days: 30
-
