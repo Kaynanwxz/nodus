@@ -1,10 +1,10 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title Nodus 0.5.0 - Tauri Build
+title Nodus 0.6.0 - Tauri Build
 
 echo ============================================================
-echo   NODUS 0.5.0 - TAURI BUILD
+echo   NODUS 0.6.0 - TAURI BUILD
 echo ============================================================
 echo.
 
@@ -40,7 +40,7 @@ if not exist "src-tauri\target\release\nodus.exe" (
   echo [ERRO] Executavel nao foi gerado.
   goto fail
 )
-if not exist "src-tauri\target\release\bundle\nsis\Nodus_0.5.0_x64-setup.exe" (
+if not exist "src-tauri\target\release\bundle\nsis\Nodus_0.6.0_x64-setup.exe" (
   echo [ERRO] Instalador NSIS nao foi gerado.
   goto fail
 )
@@ -53,7 +53,7 @@ echo Executavel:
 echo   src-tauri\target\release\nodus.exe
 echo.
 echo Instalador NSIS:
-echo   src-tauri\target\release\bundle\nsis\Nodus_0.5.0_x64-setup.exe
+echo   src-tauri\target\release\bundle\nsis\Nodus_0.6.0_x64-setup.exe
 echo.
 exit /b 0
 
