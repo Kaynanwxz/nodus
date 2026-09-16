@@ -22,6 +22,8 @@ A implementação antiga em C/Win32 foi removida do fluxo principal. O Nodus ago
 
 O design segue a referência aprovada: uma interface escura editorial com colagem clássica/surrealista, mantendo o centro funcional e a arte mais rica nas bordas.
 
+A revisão visual atual mantém as colagens e reduz a sensação de dashboard genérico: menos caixas duras, menos contornos, mais respiro, hierarquia tipográfica mais clara, estados de hover discretos e superfícies suaves integradas ao fundo.
+
 Elementos principais:
 
 - fundo preto/carvão;
@@ -29,13 +31,13 @@ Elementos principais:
 - esculturas e gravuras clássicas;
 - mapas e diagramas celestes;
 - papel envelhecido e recortes editoriais;
-- tipografia serifada de destaque;
+- tipografia serifada de destaque combinada com sans-serif discreta;
 - header próprio, sem barra branca padrão do Windows;
-- hero artístico;
-- métricas compactas;
-- cards de agentes;
-- tabela de tarefas;
-- painel de atividade.
+- hero artístico sem sobreposição de texto duplicado;
+- métricas abertas, separadas por linhas sutis em vez de caixas pesadas;
+- cards de agentes mais leves e responsivos ao hover;
+- tabela de tarefas com estados visuais discretos;
+- painel de atividade com leitura mais calma.
 
 Os assets visuais agora são arquivos reais do projeto, em vez de esculturas desenhadas com primitivas GDI.
 
@@ -63,6 +65,14 @@ Depois:
 npm install
 npm run desktop
 ```
+
+Para testar somente a interface no navegador, sem compilar o Tauri:
+
+```bash
+npm run dev
+```
+
+Abra `http://127.0.0.1:1420/`.
 
 No Windows, o Vite ignora `src-tauri/target/**` durante o modo desenvolvimento para não tentar observar executáveis temporários bloqueados pelo Cargo.
 
@@ -165,6 +175,8 @@ Depois que a interface estiver visualmente fechada, o Nodus evolui para um verda
 - Instalador oficial passa a ser o NSIS gerado pelo Tauri.
 - Header desktop customizado mantido.
 - Overview reconstruído com hero, métricas, agents, tasks e activity.
+- Refinamento visual: tipografia mais natural, menos caixa alta, menos bordas retangulares, cards mais leves, métricas abertas, estados de hover suaves e melhor hierarquia de informação.
+- Texto duplicado sobre o hero removido para preservar a colagem original sem poluição visual.
 - Abas secundárias preservadas.
 - Pipeline Windows refeito para Tauri.
 - Build sem dependência de download de assets em tempo de compilação.
@@ -182,5 +194,3 @@ Versões históricas baseadas em C/Win32. Não são mais a implementação ofici
 ---
 
 > *Nodus*: nó, vínculo, conexão.
-
-
