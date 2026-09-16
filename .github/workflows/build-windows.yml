@@ -3,7 +3,14 @@ name: Build Nodus Tauri for Windows
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - README.md
+      - docs/**
   workflow_dispatch:
+
+concurrency:
+  group: nodus-windows-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
