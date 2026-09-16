@@ -28,15 +28,22 @@ if errorlevel 1 (
   goto fail
 )
 
-if not exist node_modules (
-  echo [+] Instalando dependencias...
-  call npm install
-  if errorlevel 1 goto fail
-)
+echo [+] Atualizando dependencias do frontend...
+call npm install --no-audit --no-fund
+if errorlevel 1 goto fail
 
-echo [+] Gerando assets e compilando Nodus...
+echo [+] Validando imagens e compilando Nodus...
 call npm run desktop:build
 if errorlevel 1 goto fail
+
+if not exist "src-tauri\target\release\nodus.exe" (
+  echo [ERRO] Executavel nao foi gerado.
+  goto fail
+)
+if not exist "src-tauri\target\release\bundle\nsis\Nodus_0.5.0_x64-setup.exe" (
+  echo [ERRO] Instalador NSIS nao foi gerado.
+  goto fail
+)
 
 echo.
 echo ============================================================
@@ -46,12 +53,11 @@ echo Executavel:
 echo   src-tauri\target\release\nodus.exe
 echo.
 echo Instalador NSIS:
-echo   src-tauri\target\release\bundle\nsis\
+echo   src-tauri\target\release\bundle\nsis\Nodus_0.5.0_x64-setup.exe
 echo.
 exit /b 0
 
 :fail
 echo.
 echo A compilacao do Nodus nao foi concluida.
-pause
 exit /b 1

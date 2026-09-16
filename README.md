@@ -70,27 +70,23 @@ O projeto inclui `src-tauri/icons/icon.ico`, gerado a partir do PNG da marca Nod
 
 ## Build Windows
 
-Use:
+Na pasta do Nodus, depois de cada atualização:
 
 ```bat
+git pull origin main
 build.bat
 ```
 
-ou diretamente:
+O `build.bat` confere Node, npm e Cargo, atualiza as dependências do frontend, valida os nove assets e compila o aplicativo Tauri. Ele pode ser executado novamente sem apagar `node_modules` ou `src-tauri\target`.
 
-```bash
-npm install
-npm run desktop:build
-```
-
-Saídas principais:
+Arquivos gerados:
 
 ```text
 src-tauri\target\release\nodus.exe
-src-tauri\target\release\bundle\nsis\
+src-tauri\target\release\bundle\nsis\Nodus_0.5.0_x64-setup.exe
 ```
 
-O instalador oficial passa a ser o pacote NSIS gerado pelo próprio Tauri.
+Também é possível executar `npm install` e `npm run desktop:build` manualmente. O instalador oficial é o NSIS gerado pelo Tauri.
 
 ## GitHub Actions
 
@@ -175,6 +171,7 @@ Depois que a interface estiver visualmente fechada, o Nodus evolui para um verda
 - Vite deixa de observar `src-tauri/target/**`, evitando `EBUSY` com executáveis temporários do Cargo no Windows.
 - Corrigido o `src-tauri/icons/icon.ico` inválido que causava `failed to parse icon ... failed to fill whole buffer` no build Windows. O ícone agora contém sete resoluções e tem o PNG da marca como imagem-base.
 - Reconstruídos os WebP inválidos do hero e das laterais e incluído `bottom-center.webp`, antes ausente. A verificação de assets agora rejeita arquivos WebP ausentes ou com estrutura inválida antes do build.
+- `build.bat` passou a atualizar dependências em toda execução e a conferir o executável e o instalador gerados, mantendo o fluxo em `git pull origin main` seguido de `build.bat`.
 - README consolidado para a nova arquitetura.
 
 ### 0.4.x e anteriores
@@ -184,4 +181,5 @@ Versões históricas baseadas em C/Win32. Não são mais a implementação ofici
 ---
 
 > *Nodus*: nó, vínculo, conexão.
+
 

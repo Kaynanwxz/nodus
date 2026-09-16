@@ -24,13 +24,9 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install frontend dependencies
+      - name: Build with the same command used locally
         shell: cmd
-        run: npm install
-
-      - name: Build Nodus Tauri
-        shell: cmd
-        run: npm run desktop:build
+        run: call build.bat
 
       - name: Prepare package
         shell: powershell
@@ -49,3 +45,4 @@ jobs:
           name: Nodus-Windows-v0.5.0
           path: Nodus-Windows-v0.5.0.zip
           retention-days: 30
+
