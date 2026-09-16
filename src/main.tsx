@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles.css";
 import "./hero.css";
+import "./experience.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
