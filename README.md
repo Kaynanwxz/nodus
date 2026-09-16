@@ -24,6 +24,8 @@ O design segue a referência aprovada: uma interface escura editorial com colage
 
 A revisão visual atual mantém as colagens e reduz a sensação de dashboard genérico: menos caixas duras, menos contornos, mais respiro, hierarquia tipográfica mais clara, estados de hover discretos e superfícies suaves integradas ao fundo.
 
+A camada `src/experience.css` concentra o polimento de experiência: transições mais fluidas, entrada suave entre telas, microinterações, comportamento responsivo, áreas roláveis e correções de overflow para impedir que cards, tarefas e textos sejam cortados em janelas menores.
+
 Elementos principais:
 
 - fundo preto/carvão;
@@ -37,7 +39,9 @@ Elementos principais:
 - métricas abertas, separadas por linhas sutis em vez de caixas pesadas;
 - cards de agentes mais leves e responsivos ao hover;
 - tabela de tarefas com estados visuais discretos;
-- painel de atividade com leitura mais calma.
+- painel de atividade com leitura mais calma;
+- scroll interno discreto para evitar conteúdo engolido em telas mais baixas;
+- animações com fallback para `prefers-reduced-motion`.
 
 Os assets visuais agora são arquivos reais do projeto, em vez de esculturas desenhadas com primitivas GDI.
 
@@ -126,7 +130,8 @@ Nodus/
 │  ├─ App.tsx
 │  ├─ main.tsx
 │  ├─ styles.css
-│  └─ hero.css
+│  ├─ hero.css
+│  └─ experience.css
 ├─ src-tauri/
 │  ├─ icons/
 │  │  └─ icon.ico
@@ -177,6 +182,10 @@ Depois que a interface estiver visualmente fechada, o Nodus evolui para um verda
 - Overview reconstruído com hero, métricas, agents, tasks e activity.
 - Refinamento visual: tipografia mais natural, menos caixa alta, menos bordas retangulares, cards mais leves, métricas abertas, estados de hover suaves e melhor hierarquia de informação.
 - Texto duplicado sobre o hero removido para preservar a colagem original sem poluição visual.
+- Adicionada a camada `experience.css` com transições de tela mais fluidas, hovers mais naturais, feedback de foco, animação discreta das colagens e microinterações em métricas, agentes, tarefas e atividade.
+- Corrigidos cortes de conteúdo no Overview: a área operacional inferior agora possui rolagem própria, grids deixam de comprimir cards abaixo do conteúdo mínimo e textos longos podem quebrar sem desaparecer.
+- Melhorado o comportamento em janelas menores e mais baixas: navegação horizontal no header, agentes em duas colunas quando necessário, atividade empilhada e ajustes específicos por altura.
+- Scrollbars discretas e suporte a `prefers-reduced-motion` adicionados para uma experiência mais confortável.
 - Abas secundárias preservadas.
 - Pipeline Windows refeito para Tauri.
 - Build sem dependência de download de assets em tempo de compilação.
