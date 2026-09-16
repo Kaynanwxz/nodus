@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import {
   nodus,
   withPermissionRetry,
@@ -13,9 +14,12 @@ import {
   type TaskItem,
   type TaskStatus,
 } from "./nodus";
+import { importNodusConfig } from "./config-io";
+import { platformApi } from "./platform-api";
 
 type Tab = "Overview" | "Agents" | "Terminal" | "Tasks" | "Activity" | "Settings";
 type AgentSection = "Terminal" | "Logs" | "Tasks" | "Memory" | "Settings";
+type AgentAction = "start" | "stop" | "restart";
 
 const tabs: Tab[] = ["Overview", "Agents", "Terminal", "Tasks", "Activity", "Settings"];
 const agentSections: AgentSection[] = ["Terminal", "Logs", "Tasks", "Memory", "Settings"];
@@ -239,19 +243,42 @@ function ActivityPage({ activity }: { activity: ActivityItem[] }) {
   return <PageShell eyebrow="Archive" title="Activity" subtitle="A local audit trail of agent lifecycle, commands, tasks and errors." actions={<input className="inline-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter activity" />}><section className="panel wide-activity"><ActivityList activity={filtered} /></section></PageShell>;
 }
 
-function GlobalTerminal({ agents, onOpen }: { agents: Agent[]; onOpen: (agent: Agent, section?: AgentSection) => void }) {
-  return <PageShell eyebrow="Local shell" title="Terminal" subtitle="Choose an agent to open a command session in its configured workspace."><div className="terminal-launch-grid">{agents.map((agent) => <button className="terminal-launch" key={agent.id} onClick={() => onOpen(agent, "Terminal")}><img src={avatarFor(agent)} alt="" /><span><strong>{agent.name}</strong><small>{agent.workspace || "No workspace configured"}</small></span><i>↗</i></button>)}{!agents.length && <EmptyState title="No terminal targets" copy="Create an agent first." />}</div></PageShell>;
+function GlobalTerminal({ agents, onOpen }: { agents: Agent[]; onOpen: (agent: Agent) => void }) {
+  return <PageShell eyebrow="Local shell" title="Terminal" subtitle="Choose an agent to open a command session in its configured workspace."><div className="terminal-launch-grid">{agents.map((agent) => <button className="terminal-launch" key={agent.id} onClick={() => onOpen(agent)}><img src={avatarFor(agent)} alt="" /><span><strong>{agent.name}</strong><small>{agent.workspace || "No workspace configured"}</small></span><i>↗</i></button>)}{!agents.length && <EmptyState title="No terminal targets" copy="Create an agent first." />}</div></PageShell>;
 }
 
-function SettingsPage({ dataPath, onBackup, onExport }: { dataPath: string; onBackup: () => void; onExport: () => void }) {
-  return <PageShell eyebrow="Control plane" title="Settings" subtitle="Local-first controls, backups and system information."><div className="settings-grid"><section className="settings-card"><h3>Storage</h3><SettingRow label="Database" value="SQLite / local" /><SettingRow label="App data" value={dataPath || "Loading…"} /><SettingRow label="Runtime" value={nodus.isDesktop ? "Tauri desktop" : "Browser preview"} /><div className="settings-actions"><button className="soft-button" onClick={onBackup}>Create backup</button><button className="soft-button" onClick={onExport}>Export JSON</button></div></section><section className="settings-card"><h3>Experience</h3><SettingRow label="Command palette" value="Ctrl + K" /><SettingRow label="Quick tabs" value="Ctrl + 1…6" /><SettingRow label="Persistence" value="Enabled" /><p className="settings-note">Process control, tasks, permissions, memory and activity are stored locally. No cloud account is required.</p></section></div></PageShell>;
+function SettingsPage({ dataPath, autostart, onAutostart, onBackup, onExport, onImport, onHide }: {
+  dataPath: string;
+  autostart: boolean;
+  onAutostart: (enabled: boolean) => void;
+  onBackup: () => void;
+  onExport: () => void;
+  onImport: (raw: string) => void;
+  onHide: () => void;
+}) {
+  const importRef = useRef<HTMLInputElement | null>(null);
+  const pickImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    onImport(await file.text());
+    event.target.value = "";
+  };
+  return <PageShell eyebrow="Control plane" title="Settings" subtitle="Local-first controls, backups and system integration."><div className="settings-grid"><section className="settings-card"><h3>Storage</h3><SettingRow label="Database" value="SQLite / local" /><SettingRow label="App data" value={dataPath || "Loading…"} /><SettingRow label="Runtime" value={nodus.isDesktop ? "Tauri desktop" : "Browser preview"} /><div className="settings-actions"><button className="soft-button" onClick={onBackup}>Create backup</button><button className="soft-button" onClick={onExport}>Export JSON</button><button className="soft-button" onClick={() => importRef.current?.click()}>Import JSON</button><input ref={importRef} hidden type="file" accept="application/json,.json" onChange={pickImport} /></div></section><section className="settings-card"><h3>Windows & experience</h3><div className="setting-row"><span>Start with Windows</span><button className={`switch ${autostart ? "on" : ""}`} onClick={() => onAutostart(!autostart)}><i /></button></div><SettingRow label="Command palette" value="Ctrl + K" /><SettingRow label="Quick tabs" value="Ctrl + 1…6" /><SettingRow label="Persistence" value="Enabled" /><div className="settings-actions"><button className="soft-button" disabled={!nodus.isDesktop} onClick={onHide}>Hide to tray</button></div><p className="settings-note">Agents, tasks, permissions, memory, activity and backups stay on this computer. The tray menu can reopen Nodus after you hide it.</p></section></div></PageShell>;
 }
 
 function SettingRow({ label, value }: { label: string; value: string }) {
   return <div className="setting-row"><span>{label}</span><strong title={value}>{value}</strong></div>;
 }
 
-function AgentDetail({ agent, tasks, activity, onClose, onChanged }: { agent: Agent; tasks: TaskItem[]; activity: ActivityItem[]; onClose: () => void; onChanged: () => Promise<void> }) {
+function AgentDetail({ agent, tasks, activity, onClose, onChanged, onEdit, onDelete }: {
+  agent: Agent;
+  tasks: TaskItem[];
+  activity: ActivityItem[];
+  onClose: () => void;
+  onChanged: () => Promise<void>;
+  onEdit: (agent: Agent) => void;
+  onDelete: (agent: Agent) => void;
+}) {
   const [section, setSection] = useState<AgentSection>("Terminal");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -261,6 +288,7 @@ function AgentDetail({ agent, tasks, activity, onClose, onChanged }: { agent: Ag
   const [memory, setMemoryState] = useState<MemoryEntry[]>([]);
   const [memoryKey, setMemoryKey] = useState("");
   const [memoryValue, setMemoryValue] = useState("");
+  const [dropActive, setDropActive] = useState(false);
   const terminalEnd = useRef<HTMLDivElement | null>(null);
 
   const loadAgentExtras = useCallback(async () => {
@@ -270,6 +298,33 @@ function AgentDetail({ agent, tasks, activity, onClose, onChanged }: { agent: Ag
 
   useEffect(() => { void loadAgentExtras(); }, [loadAgentExtras]);
   useEffect(() => { terminalEnd.current?.scrollIntoView({ behavior: "smooth" }); }, [terminalLines]);
+
+  useEffect(() => {
+    if (!nodus.isDesktop) return;
+    let unlisten: (() => void) | undefined;
+    getCurrentWebview().onDragDropEvent(async (event) => {
+      if (event.payload.type === "enter" || event.payload.type === "over") setDropActive(true);
+      if (event.payload.type === "leave") setDropActive(false);
+      if (event.payload.type === "drop") {
+        setDropActive(false);
+        const paths = event.payload.paths;
+        if (!paths.length) return;
+        try {
+          const copied = await withPermissionRetry(
+            () => platformApi.attachFiles(agent.id, paths),
+            () => platformApi.attachFiles(agent.id, paths, true),
+          );
+          setTerminalLines((lines) => [...lines, `[files] ${copied.length} file(s) copied to .nodus/inbox`, ...copied.map((p) => `  ${p}`)]);
+          if (copied.length) await nodus.setMemory(agent.id, "inbox.lastFiles", copied.join("\n"));
+          await loadAgentExtras();
+          await onChanged();
+        } catch (e) {
+          setError(String(e));
+        }
+      }
+    }).then((fn) => { unlisten = fn; });
+    return () => unlisten?.();
+  }, [agent.id, loadAgentExtras, onChanged]);
 
   const doAction = async (action: "start" | "stop" | "restart" | "workspace") => {
     setBusy(true); setError("");
@@ -316,13 +371,14 @@ function AgentDetail({ agent, tasks, activity, onClose, onChanged }: { agent: Ag
   const agentActivity = activity.filter((item) => item.actor === agent.name);
 
   return (
-    <div className="detail-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className={`detail-overlay ${dropActive ? "dropping" : ""}`} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <section className="agent-detail">
-        <header className="agent-detail-head"><button className="back-button" onClick={onClose}>←</button><img src={avatarFor(agent)} alt="" /><div><span className={`status-pill ${agent.status === "Running" ? "active" : "idle"}`}>{agent.status}</span><h2>{agent.name}</h2><p>{agent.role || "Unassigned role"}</p></div><div className="agent-control-strip"><button disabled={busy || agent.status === "Running"} onClick={() => doAction("start")}>▶ Start</button><button disabled={busy || agent.status !== "Running"} onClick={() => doAction("stop")}>■ Stop</button><button disabled={busy} onClick={() => doAction("restart")}>↻ Restart</button><button disabled={busy} onClick={() => doAction("workspace")}>⌂ Workspace</button></div></header>
+        <header className="agent-detail-head"><button className="back-button" onClick={onClose}>←</button><img src={avatarFor(agent)} alt="" /><div><span className={`status-pill ${agent.status === "Running" ? "active" : "idle"}`}>{agent.status}</span><h2>{agent.name}</h2><p>{agent.role || "Unassigned role"}</p></div><div className="agent-control-strip"><button disabled={busy || agent.status === "Running"} onClick={() => doAction("start")}>▶ Start</button><button disabled={busy || agent.status !== "Running"} onClick={() => doAction("stop")}>■ Stop</button><button disabled={busy} onClick={() => doAction("restart")}>↻ Restart</button><button disabled={busy} onClick={() => doAction("workspace")}>⌂ Workspace</button><button onClick={() => onEdit(agent)}>✎ Edit</button><button className="danger-button" onClick={() => onDelete(agent)}>Delete</button></div></header>
+        {dropActive && <div className="drop-banner">Drop files to copy them into {agent.name} · .nodus/inbox</div>}
         {error && <div className="error-banner">{error}</div>}
         <nav className="detail-tabs">{agentSections.map((item) => <button key={item} className={section === item ? "active" : ""} onClick={() => setSection(item)}>{item}</button>)}</nav>
         <div className="agent-detail-body">
-          {section === "Terminal" && <div className="live-terminal"><div className="terminal-screen">{terminalLines.map((line, i) => <pre key={i}>{line}</pre>)}<div ref={terminalEnd} /></div><form className="terminal-input-row" onSubmit={runTerminal}><span>›</span><input autoFocus value={terminalInput} onChange={(e) => setTerminalInput(e.target.value)} placeholder="Run a command in this agent workspace" /><button>Run</button></form></div>}
+          {section === "Terminal" && <div className="live-terminal"><div className="terminal-screen">{terminalLines.map((line, i) => <pre key={i}>{line}</pre>)}<div ref={terminalEnd} /></div><form className="terminal-input-row" onSubmit={runTerminal}><span>›</span><input autoFocus value={terminalInput} onChange={(e) => setTerminalInput(e.target.value)} placeholder="Run a command in this agent workspace" /><button>Run</button></form><div className="terminal-drop-hint">Drop files anywhere on this panel to add them to the agent inbox.</div></div>}
           {section === "Logs" && <div className="detail-content"><ActivityList activity={agentActivity} /></div>}
           {section === "Tasks" && <div className="detail-content">{agentTasks.length ? agentTasks.map((task) => <div className="detail-task" key={task.id}><div><strong>{task.title}</strong><span>{task.priority} · {formatWhen(task.createdAt)}</span></div><StatusBadge status={task.status} /></div>) : <EmptyState title="No assigned tasks" copy="Create a task and assign it to this agent." />}</div>}
           {section === "Memory" && <div className="detail-content memory-layout"><form className="memory-form" onSubmit={addMemory}><input value={memoryKey} onChange={(e) => setMemoryKey(e.target.value)} placeholder="Key, e.g. project" /><textarea value={memoryValue} onChange={(e) => setMemoryValue(e.target.value)} placeholder="Value or note" /><button className="primary-button">Save memory</button></form><div className="memory-list">{memory.map((entry) => <article key={entry.id}><div><strong>{entry.key}</strong><small>{formatWhen(entry.updatedAt)}</small></div><p>{entry.value}</p><button onClick={async () => { await nodus.deleteMemory(entry.id); await loadAgentExtras(); }}>Delete</button></article>)}{!memory.length && <EmptyState title="No memory entries" copy="Store stable project facts or agent-specific notes here." />}</div></div>}
@@ -333,12 +389,12 @@ function AgentDetail({ agent, tasks, activity, onClose, onChanged }: { agent: Ag
   );
 }
 
-function AgentModal({ onClose, onSave }: { onClose: () => void; onSave: (input: AgentInput) => Promise<void> }) {
-  const [form, setForm] = useState(blankAgent);
+function AgentModal({ initial, onClose, onSave }: { initial?: Agent | null; onClose: () => void; onSave: (input: AgentInput) => Promise<void> }) {
+  const [form, setForm] = useState<AgentInput>(initial ? { name: initial.name, role: initial.role, description: initial.description, command: initial.command, workspace: initial.workspace, provider: initial.provider, model: initial.model } : blankAgent);
   const [busy, setBusy] = useState(false);
   const set = (key: keyof AgentInput, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const submit = async (e: FormEvent) => { e.preventDefault(); if (!form.name.trim()) return; setBusy(true); try { await onSave(form); onClose(); } finally { setBusy(false); } };
-  return <Modal title="New agent" subtitle="Connect any local CLI, script or long-running process." onClose={onClose}><form className="form-grid" onSubmit={submit}><label>Name<input autoFocus value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Hermes" /></label><label>Role<input value={form.role} onChange={(e) => set("role", e.target.value)} placeholder="Development agent" /></label><label className="span-2">Description<input value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="What this agent is responsible for" /></label><label className="span-2">Start command<input value={form.command} onChange={(e) => set("command", e.target.value)} placeholder="hermes --resume" /></label><label className="span-2">Workspace<input value={form.workspace} onChange={(e) => set("workspace", e.target.value)} placeholder="D:\\Agents\\Hermes" /></label><label>Provider<input value={form.provider} onChange={(e) => set("provider", e.target.value)} placeholder="Local / OpenRouter / ..." /></label><label>Model<input value={form.model} onChange={(e) => set("model", e.target.value)} placeholder="Optional" /></label><div className="modal-actions span-2"><button type="button" className="soft-button" onClick={onClose}>Cancel</button><button className="primary-button" disabled={busy}>{busy ? "Saving…" : "Create agent"}</button></div></form></Modal>;
+  return <Modal title={initial ? `Edit ${initial.name}` : "New agent"} subtitle={initial ? "Update the command, workspace or role used by Nodus." : "Connect any local CLI, script or long-running process."} onClose={onClose}><form className="form-grid" onSubmit={submit}><label>Name<input autoFocus value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Hermes" /></label><label>Role<input value={form.role} onChange={(e) => set("role", e.target.value)} placeholder="Development agent" /></label><label className="span-2">Description<input value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="What this agent is responsible for" /></label><label className="span-2">Start command<input value={form.command} onChange={(e) => set("command", e.target.value)} placeholder="hermes --resume" /></label><label className="span-2">Workspace<input value={form.workspace} onChange={(e) => set("workspace", e.target.value)} placeholder="D:\\Agents\\Hermes" /></label><label>Provider<input value={form.provider} onChange={(e) => set("provider", e.target.value)} placeholder="Local / OpenRouter / ..." /></label><label>Model<input value={form.model} onChange={(e) => set("model", e.target.value)} placeholder="Optional" /></label><div className="modal-actions span-2"><button type="button" className="soft-button" onClick={onClose}>Cancel</button><button className="primary-button" disabled={busy}>{busy ? "Saving…" : initial ? "Save changes" : "Create agent"}</button></div></form></Modal>;
 }
 
 function TaskModal({ agents, onClose, onSave }: { agents: Agent[]; onClose: () => void; onSave: (input: { title: string; agentId?: string | null; priority: string; notes: string }) => Promise<void> }) {
@@ -351,16 +407,32 @@ function Modal({ title, subtitle, onClose, children }: { title: string; subtitle
   return <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}><section className="modal"><header><div><h2>{title}</h2><p>{subtitle}</p></div><button onClick={onClose}>×</button></header>{children}</section></div>;
 }
 
-function CommandPalette({ agents, tasks, query, setQuery, onClose, onTab, onAgent, onNewAgent, onNewTask }: {
-  agents: Agent[]; tasks: TaskItem[]; query: string; setQuery: (v: string) => void; onClose: () => void; onTab: (tab: Tab) => void; onAgent: (a: Agent) => void; onNewAgent: () => void; onNewTask: () => void;
+function CommandPalette({ agents, tasks, query, setQuery, onClose, onTab, onAgent, onAgentAction, onNewAgent, onNewTask }: {
+  agents: Agent[];
+  tasks: TaskItem[];
+  query: string;
+  setQuery: (v: string) => void;
+  onClose: () => void;
+  onTab: (tab: Tab) => void;
+  onAgent: (a: Agent) => void;
+  onAgentAction: (agent: Agent, action: AgentAction) => void;
+  onNewAgent: () => void;
+  onNewTask: () => void;
 }) {
   const q = query.toLowerCase();
   const results: { label: string; meta: string; run: () => void }[] = [
-    { label: "Create agent", meta: "Action", run: onNewAgent }, { label: "Create task", meta: "Action", run: onNewTask },
+    { label: "Create agent", meta: "Action", run: onNewAgent },
+    { label: "Create task", meta: "Action", run: onNewTask },
+    { label: "Show errors", meta: "Activity", run: () => onTab("Activity") },
     ...tabs.map((tab) => ({ label: `Open ${tab}`, meta: "Navigate", run: () => onTab(tab) })),
-    ...agents.map((agent) => ({ label: agent.name, meta: `${agent.status} · ${agent.role || "Agent"}`, run: () => onAgent(agent) })),
+    ...agents.flatMap((agent) => [
+      { label: `Open ${agent.name}`, meta: `${agent.status} · ${agent.role || "Agent"}`, run: () => onAgent(agent) },
+      { label: `Start ${agent.name}`, meta: "Agent action", run: () => onAgentAction(agent, "start") },
+      { label: `Restart ${agent.name}`, meta: "Agent action", run: () => onAgentAction(agent, "restart") },
+      ...(agent.status === "Running" ? [{ label: `Stop ${agent.name}`, meta: "Agent action", run: () => onAgentAction(agent, "stop" as AgentAction) }] : []),
+    ]),
     ...tasks.slice(0, 20).map((task) => ({ label: task.title, meta: `${task.status} · ${task.agentName || "Unassigned"}`, run: () => onTab("Tasks") })),
-  ].filter((item) => `${item.label} ${item.meta}`.toLowerCase().includes(q)).slice(0, 12);
+  ].filter((item) => `${item.label} ${item.meta}`.toLowerCase().includes(q)).slice(0, 14);
   return <div className="palette-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}><section className="command-palette"><div className="palette-input"><span>⌕</span><input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Type a command, agent or task…" /><kbd>Esc</kbd></div><div className="palette-results">{results.map((item, index) => <button key={`${item.label}-${index}`} onClick={() => { item.run(); onClose(); }}><span>{item.label}</span><small>{item.meta}</small></button>)}{!results.length && <EmptyState title="No match" copy="Try a different command or name." />}</div></section></div>;
 }
 
@@ -372,11 +444,13 @@ export default function App() {
   const [metrics, setMetrics] = useState<Metrics>(emptyMetrics);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [agentModal, setAgentModal] = useState(false);
+  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [taskModal, setTaskModal] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteQuery, setPaletteQuery] = useState("");
   const [search, setSearch] = useState("");
   const [dataPath, setDataPath] = useState("");
+  const [autostart, setAutostartState] = useState(false);
   const [toast, setToast] = useState("");
 
   const refresh = useCallback(async () => {
@@ -384,7 +458,11 @@ export default function App() {
     setAgents(nextAgents); setTasks(nextTasks); setActivity(nextActivity); setMetrics(nextMetrics);
   }, []);
 
-  useEffect(() => { void refresh(); void nodus.appDataPath().then(setDataPath); }, [refresh]);
+  useEffect(() => {
+    void refresh();
+    void nodus.appDataPath().then(setDataPath);
+    void platformApi.isAutostartEnabled().then(setAutostartState).catch(() => setAutostartState(false));
+  }, [refresh]);
   useEffect(() => {
     const id = window.setInterval(() => void refresh(), 5000);
     return () => window.clearInterval(id);
@@ -393,7 +471,7 @@ export default function App() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setPaletteOpen((v) => !v); setPaletteQuery(""); }
-      if (event.key === "Escape") { setPaletteOpen(false); setSelectedAgentId(null); setAgentModal(false); setTaskModal(false); }
+      if (event.key === "Escape") { setPaletteOpen(false); setSelectedAgentId(null); setAgentModal(false); setEditingAgent(null); setTaskModal(false); }
       if (event.ctrlKey && /^[1-6]$/.test(event.key)) { event.preventDefault(); setActive(tabs[Number(event.key) - 1]); }
     };
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
@@ -405,11 +483,16 @@ export default function App() {
 
   const flash = (message: string) => { setToast(message); window.setTimeout(() => setToast(""), 3200); };
   const createAgent = async (input: AgentInput) => { const agent = await nodus.createAgent(input); await refresh(); setSelectedAgentId(agent.id); flash(`${agent.name} added to Nodus`); };
+  const updateAgent = async (input: AgentInput) => { if (!editingAgent) return; const updated = await nodus.updateAgent(editingAgent.id, input); await refresh(); setSelectedAgentId(updated.id); flash(`${updated.name} updated`); };
+  const removeAgent = async (agent: Agent) => { if (!window.confirm(`Delete ${agent.name} from Nodus? Its memory and permissions will also be removed.`)) return; await nodus.deleteAgent(agent.id); setSelectedAgentId(null); await refresh(); flash(`${agent.name} removed`); };
   const createTask = async (input: { title: string; agentId?: string | null; priority: string; notes: string }) => { await nodus.createTask(input); await refresh(); flash("Task created"); };
   const taskStatus = async (task: TaskItem, status: TaskStatus) => { await nodus.setTaskStatus(task.id, status); if (status === "Completed") notify("Nodus · Task completed", task.title); if (status === "Failed") notify("Nodus · Task failed", task.title); await refresh(); };
   const deleteTask = async (task: TaskItem) => { if (!window.confirm(`Delete “${task.title}”?`)) return; await nodus.deleteTask(task.id); await refresh(); };
   const backup = async () => { try { flash(`Backup: ${await nodus.backupDatabase()}`); } catch (e) { flash(String(e)); } };
   const exportJson = async () => { const json = await nodus.exportConfig(); const blob = new Blob([json], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `nodus-export-${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url); flash("Configuration exported"); };
+  const importJson = async (raw: string) => { if (!window.confirm("Import this Nodus configuration? Current agents and tasks will be replaced.")) return; try { const result = await importNodusConfig(raw, true); await refresh(); flash(`Imported ${result.agents} agents and ${result.tasks} tasks`); } catch (e) { flash(`Import failed: ${String(e)}`); } };
+  const toggleAutostart = async (enabled: boolean) => { try { const value = await platformApi.setAutostart(enabled); setAutostartState(value); flash(value ? "Nodus will start with Windows" : "Autostart disabled"); } catch (e) { flash(String(e)); } };
+  const agentAction = async (agent: Agent, action: AgentAction) => { try { if (action === "start") await withPermissionRetry(() => nodus.startAgent(agent.id), () => nodus.startAgent(agent.id, true)); if (action === "stop") await nodus.stopAgent(agent.id); if (action === "restart") await withPermissionRetry(() => nodus.restartAgent(agent.id), () => nodus.restartAgent(agent.id, true)); await refresh(); flash(`${agent.name}: ${action}`); } catch (e) { flash(String(e)); } };
 
   const content = (() => {
     switch (active) {
@@ -418,7 +501,7 @@ export default function App() {
       case "Terminal": return <GlobalTerminal agents={filteredAgents} onOpen={(a) => setSelectedAgentId(a.id)} />;
       case "Tasks": return <TasksPage tasks={filteredTasks} agents={agents} onNew={() => setTaskModal(true)} onStatus={taskStatus} onDelete={deleteTask} />;
       case "Activity": return <ActivityPage activity={activity} />;
-      case "Settings": return <SettingsPage dataPath={dataPath} onBackup={backup} onExport={exportJson} />;
+      case "Settings": return <SettingsPage dataPath={dataPath} autostart={autostart} onAutostart={toggleAutostart} onBackup={backup} onExport={exportJson} onImport={importJson} onHide={() => platformApi.hideToTray()} />;
     }
   })();
 
@@ -426,10 +509,11 @@ export default function App() {
     <div className="app-shell">
       <Header active={active} onTab={setActive} onPalette={() => { setPaletteOpen(true); setPaletteQuery(""); }} search={search} setSearch={setSearch} />
       {content}
-      {selectedAgent && <AgentDetail agent={selectedAgent} tasks={tasks} activity={activity} onClose={() => setSelectedAgentId(null)} onChanged={refresh} />}
+      {selectedAgent && <AgentDetail agent={selectedAgent} tasks={tasks} activity={activity} onClose={() => setSelectedAgentId(null)} onChanged={refresh} onEdit={(agent) => setEditingAgent(agent)} onDelete={removeAgent} />}
       {agentModal && <AgentModal onClose={() => setAgentModal(false)} onSave={createAgent} />}
+      {editingAgent && <AgentModal initial={editingAgent} onClose={() => setEditingAgent(null)} onSave={updateAgent} />}
       {taskModal && <TaskModal agents={agents} onClose={() => setTaskModal(false)} onSave={createTask} />}
-      {paletteOpen && <CommandPalette agents={agents} tasks={tasks} query={paletteQuery} setQuery={setPaletteQuery} onClose={() => setPaletteOpen(false)} onTab={setActive} onAgent={(a) => setSelectedAgentId(a.id)} onNewAgent={() => setAgentModal(true)} onNewTask={() => setTaskModal(true)} />}
+      {paletteOpen && <CommandPalette agents={agents} tasks={tasks} query={paletteQuery} setQuery={setPaletteQuery} onClose={() => setPaletteOpen(false)} onTab={setActive} onAgent={(a) => setSelectedAgentId(a.id)} onAgentAction={agentAction} onNewAgent={() => setAgentModal(true)} onNewTask={() => setTaskModal(true)} />}
       {toast && <div className="toast">{toast}</div>}
     </div>
   );
