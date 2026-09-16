@@ -1,0 +1,421 @@
+/* Interaction and layout polish layered on top of the visual system. */
+
+:root {
+  --ease-smooth: cubic-bezier(.22, .61, .36, 1);
+  --ease-soft: cubic-bezier(.16, 1, .3, 1);
+}
+
+/* Keep every routed view inside the available desktop viewport without
+   forcing content to be compressed or visually swallowed. */
+.app-shell {
+  min-width: 0;
+  min-height: 0;
+}
+
+.overview-stage,
+.secondary-page {
+  animation: nodus-view-in 420ms var(--ease-soft) both;
+  transform-origin: 50% 12%;
+}
+
+@keyframes nodus-view-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(.997);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Overview: the lower workspace gets its own scroll area. This prevents
+   cards, tasks and activity from being clipped on shorter screens. */
+.center-canvas {
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: minmax(170px, 24vh) minmax(98px, auto) minmax(0, 1fr);
+}
+
+.dashboard-grid {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  align-content: start;
+  padding: 10px 5px 132px 0;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  mask-image: linear-gradient(to bottom, transparent 0, #000 10px, #000 calc(100% - 20px), transparent 100%);
+}
+
+.dashboard-main {
+  min-width: 0;
+  min-height: max-content;
+  grid-template-rows: auto auto;
+  align-content: start;
+}
+
+.agents-grid {
+  height: auto;
+  min-height: 0;
+  grid-auto-rows: minmax(190px, auto);
+}
+
+.activity-panel {
+  align-self: start;
+  min-height: 0;
+}
+
+.task-table,
+.activity-list {
+  min-width: 0;
+}
+
+/* Keep long content readable instead of letting it disappear. */
+.task-name,
+.task-agent,
+.agent-role,
+.agent-description,
+.activity-copy,
+.panel-subtitle {
+  min-width: 0;
+}
+
+.agent-description,
+.activity-copy p,
+.activity-copy em,
+.panel-subtitle {
+  overflow-wrap: anywhere;
+}
+
+.task-name {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.secondary-page {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  padding-bottom: 72px;
+}
+
+.page-agent-grid,
+.settings-grid,
+.wide-activity,
+.terminal-shell,
+.secondary-page .tasks-panel {
+  min-width: 0;
+}
+
+/* Softer, more tactile interaction. */
+button,
+.nav-item,
+.search-box,
+.pulse-medallion,
+.metric-card,
+.agent-card,
+.task-row,
+.activity-item,
+.setting-row,
+.view-all,
+.profile,
+.task-check {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 1px solid rgba(220, 176, 112, .6);
+  outline-offset: 3px;
+}
+
+.nav-item {
+  transition:
+    color 280ms var(--ease-smooth),
+    background-color 280ms var(--ease-smooth),
+    transform 280ms var(--ease-smooth);
+}
+
+.nav-item::after {
+  transform: scaleX(.2);
+  opacity: 0;
+  transition: transform 320ms var(--ease-soft), opacity 240ms ease;
+}
+
+.nav-item.active::after {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+.search-box {
+  transition:
+    width 320ms var(--ease-soft),
+    border-color 260ms ease,
+    background-color 260ms ease,
+    box-shadow 260ms ease;
+}
+
+.search-box:focus-within {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .18);
+}
+
+.pulse-medallion,
+.window-buttons button,
+.view-all,
+.ellipsis,
+.task-menu {
+  transition:
+    transform 260ms var(--ease-smooth),
+    color 220ms ease,
+    background-color 220ms ease,
+    opacity 220ms ease;
+}
+
+.metric-card {
+  border-radius: 12px;
+  transition:
+    transform 320ms var(--ease-soft),
+    background-color 320ms ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, .018);
+}
+
+.metric-value,
+.metric-note,
+.metric-title {
+  transition: color 240ms ease, opacity 240ms ease;
+}
+
+.panel {
+  transition:
+    border-color 320ms ease,
+    box-shadow 360ms ease,
+    background-color 320ms ease;
+}
+
+.panel:hover {
+  border-color: rgba(221, 184, 133, .105);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, .22);
+}
+
+.agent-card {
+  transform: translateZ(0);
+  transition:
+    transform 360ms var(--ease-soft),
+    background-color 320ms ease,
+    border-color 320ms ease,
+    box-shadow 360ms ease;
+}
+
+.agent-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, .16);
+}
+
+.avatar-wrap,
+.avatar-wrap img {
+  transition: transform 420ms var(--ease-soft), filter 320ms ease, border-color 320ms ease;
+}
+
+.agent-card:hover .avatar-wrap {
+  transform: translateY(-1px) scale(1.025);
+}
+
+.agent-card:hover .avatar-wrap img {
+  filter: contrast(1.035) saturate(.95);
+}
+
+.agent-arrow {
+  transition: opacity 280ms ease, transform 340ms var(--ease-soft);
+}
+
+.task-row {
+  position: relative;
+  transition:
+    background-color 260ms ease,
+    transform 280ms var(--ease-smooth),
+    color 240ms ease;
+}
+
+.task-row:hover {
+  transform: translateX(3px);
+}
+
+.task-check {
+  transition: border-color 220ms ease, background-color 220ms ease, transform 220ms var(--ease-smooth);
+}
+
+.task-row:hover .task-check {
+  border-color: rgba(206, 159, 96, .46);
+  transform: scale(1.06);
+}
+
+.activity-item {
+  border-radius: 10px;
+  transition:
+    background-color 260ms ease,
+    transform 280ms var(--ease-smooth),
+    opacity 220ms ease;
+}
+
+.activity-item:hover {
+  background: rgba(255, 255, 255, .018);
+  transform: translateX(3px);
+}
+
+.activity-marker {
+  transition: transform 300ms var(--ease-soft), box-shadow 300ms ease;
+}
+
+.activity-item:hover .activity-marker {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 4px rgba(202, 151, 83, .06);
+}
+
+.setting-row {
+  transition: background-color 240ms ease, padding 280ms var(--ease-smooth);
+}
+
+.setting-row:hover {
+  background: rgba(255, 255, 255, .018);
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* The collage should feel alive without competing with the interface. */
+.hero-art img {
+  transform: scale(1.001);
+  transition: transform 1.2s var(--ease-soft), filter 600ms ease;
+}
+
+.hero-art:hover img {
+  transform: scale(1.012);
+}
+
+.left-rail,
+.right-rail,
+.bottom-art {
+  animation: collage-in 700ms var(--ease-soft) both;
+}
+
+.right-rail { animation-delay: 70ms; }
+.bottom-art { animation-delay: 120ms; }
+
+@keyframes collage-in {
+  from { opacity: 0; transform: scale(1.008); }
+  to { opacity: .9; transform: scale(1); }
+}
+
+/* Compact layouts: stop the header and content grids from eating each other. */
+@media (max-width: 1280px) {
+  .topbar {
+    grid-template-columns: minmax(170px, 205px) minmax(430px, 1fr) auto;
+  }
+
+  .header-tools { gap: 7px; }
+  .search-box { width: 170px; }
+  .nav-item { padding-inline: 10px; }
+
+  .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 30%);
+  }
+
+  .agents-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1080px) {
+  .topbar {
+    grid-template-columns: 170px minmax(0, 1fr) auto;
+  }
+
+  .brand { padding-left: 22px; }
+  .brand-subtitle,
+  .clock,
+  .profile,
+  .search-box { display: none; }
+
+  .main-nav {
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    mask-image: linear-gradient(90deg, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+  }
+
+  .main-nav::-webkit-scrollbar { display: none; }
+  .nav-item { flex: 0 0 auto; }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .activity-panel {
+    order: 2;
+  }
+}
+
+@media (max-height: 760px) {
+  .center-canvas {
+    grid-template-rows: minmax(145px, 21vh) minmax(88px, auto) minmax(0, 1fr);
+  }
+
+  .metric-card { padding-block: 8px; }
+  .metric-value { font-size: 24px; }
+  .dashboard-grid { padding-bottom: 112px; }
+}
+
+/* Subtle scrollbars that match the editorial palette. */
+.dashboard-grid,
+.secondary-page {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(190, 143, 83, .34) rgba(255, 255, 255, .025);
+}
+
+.dashboard-grid::-webkit-scrollbar,
+.secondary-page::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dashboard-grid::-webkit-scrollbar-track,
+.secondary-page::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, .018);
+  border-radius: 999px;
+}
+
+.dashboard-grid::-webkit-scrollbar-thumb,
+.secondary-page::-webkit-scrollbar-thumb {
+  background: rgba(190, 143, 83, .26);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.dashboard-grid::-webkit-scrollbar-thumb:hover,
+.secondary-page::-webkit-scrollbar-thumb:hover {
+  background: rgba(211, 164, 102, .42);
+  background-clip: padding-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
